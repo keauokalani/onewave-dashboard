@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Emergency Updates | One Wave Radio</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: Arial, sans-serif; background:#1a1a2e; color:#fff; min-height:100vh; }
+.emergency-banner { background:linear-gradient(135deg, #dc2626, #b91c1c); padding:12px; text-align:center; font-weight:bold; font-size:18px; animation: pulse-bg 2s ease-in-out infinite; }
+@keyframes pulse-bg { 0%,100%{opacity:1} 50%{opacity:0.8} }
+header { background:rgba(0,0,0,0.3); padding:20px; text-align:center; }
+header h1 { font-size:28px; margin-bottom:5px; }
+header p { color:#94a3b8; font-size:14px; }
+nav { display:flex; justify-content:center; gap:15px; padding:15px; background:rgba(0,0,0,0.2); flex-wrap:wrap; }
+nav a { color:#38bdf8; text-decoration:none; padding:8px 16px; border-radius:6px; transition:0.3s; }
+nav a:hover { background:rgba(56,189,248,0.2); }
+.content { max-width:800px; margin:30px auto; padding:0 20px; }
+.alert-card { background:rgba(220,38,38,0.15); border:1px solid rgba(220,38,38,0.4); border-radius:12px; padding:20px; margin-bottom:20px; }
+.alert-card h3 { color:#f87171; margin-bottom:10px; font-size:20px; }
+.alert-card p { color:#d1d5db; line-height:1.6; }
+.alert-card .time { color:#94a3b8; font-size:12px; margin-top:8px; }
+.news-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:20px; margin-bottom:15px; }
+.news-card h3 { color:#38bdf8; margin-bottom:8px; }
+.news-card p { color:#d1d5db; line-height:1.6; }
+.news-card .time { color:#94a3b8; font-size:12px; margin-top:8px; }
+.section-title { font-size:24px; font-weight:bold; margin:30px 0 15px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); }
+.player-mini { background:rgba(0,0,0,0.3); padding:15px; text-align:center; border-radius:12px; margin-bottom:20px; }
+</style>
+</head>
+<body>
+<div class="emergency-banner">&#x1F6A8; EMERGENCY BROADCAST MODE &#x1F6A8;</div>
+<header>
+<h1>One Wave Radio</h1>
+<p>Ka&#x2BB;u Emergency Updates</p>
+</header>
+<nav>
+<a href="index.html">Home</a>
+<a href="listen.html">Listen Live</a>
+<a href="news.html">News</a>
+<a href="weather.html">Weather</a>
+<a href="about.html">About</a>
+</nav>
+<div class="content">
+    <div class="player-mini">
+        <p style="margin-bottom:10px;font-weight:bold;">&#x1F534; Emergency Audio Feed</p>
+        <audio id="emergencyPlayer" controls style="width:100%;max-width:400px;">
+            <source src="https://pub-2aa01387a331477abb91b2bed61747b9.r2.dev/emergency-broadcast.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+    <h2 class="section-title">&#x26A0;&#xFE0F; Active Alerts</h2>
+    <div id="alertsFeed">
+        <div class="alert-card">
+            <h3>&#x26A0;&#xFE0F; No Active Alerts</h3>
+            <p>There are currently no active emergency alerts for the Ka&#x2BB;u district.</p>
+            <div class="time">Last checked: <span id="lastCheck">--</span></div>
+        </div>
+    </div>
+    <h2 class="section-title">&#x1F4F0; Latest News Updates</h2>
+    <div id="updatesFeed">
+        <div class="news-card">
+            <h3>National News, Ka&#x2BB;u News, and Hawaiian History</h3>
+            <p>Updates will appear here. This feed pulls from Cloudflare for the latest emergency and community news updates.</p>
+            <div class="time">Broadcasting 24/7</div>
+        </div>
+    </div>
+</div>
+<script>
+function updateCheckTime() {
+    var now = new Date();
+    var el = document.getElementById("lastCheck");
+    if (el) el.textContent = now.toLocaleString();
+}
+updateCheckTime();
+setInterval(updateCheckTime, 60000);
+</script>
+</body>
+</html>
