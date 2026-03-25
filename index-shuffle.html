@@ -3,31 +3,59 @@
 <head>
 <title>Listen Live | One Wave Radio</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  body { margin:0; font-family:system-ui,sans-serif; background:#0f0f0f; color:#fff; }
+  .hero-section { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:linear-gradient(135deg,#4a0e4e,#000,#0e2a4e); padding:40px 20px; }
+  .hero-section h1 { font-size:3em; margin-bottom:10px; }
+  .hero-section .subtitle { font-size:1.2em; color:#ccc; margin-bottom:10px; }
+  .hero-section .artist { font-size:1.4em; color:#e0b0ff; margin-bottom:30px; }
+  .hero-section .btn { display:inline-block; padding:12px 32px; border-radius:50px; font-size:16px; font-weight:bold; cursor:pointer; text-decoration:none; transition:background 0.2s; margin:5px; }
+  .hero-section .btn-primary { background:#d63384; color:#fff; border:none; }
+  .hero-section .btn-primary:hover { background:#e74c9e; }
+  .hero-section .btn-outline { background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.3); }
+  .hero-section .btn-outline:hover { border-color:#fff; }
+  .player-section { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:#000; padding:40px 20px; }
+  .player-section h2 { font-size:3em; margin-bottom:5px; }
+  .player-section .radio-title { font-size:2.5em; font-weight:bold; color:#e0b0ff; margin-bottom:30px; }
+  .player-section #trackTitle { font-size:1.1em; color:#f0a0d0; margin-bottom:15px; }
+  .player-section .broadcast-info { font-size:0.9em; color:#999; margin-top:15px; }
+  .player-controls { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:20px; }
+  .player-controls button { border:none; padding:12px 22px; border-radius:12px; font-size:16px; font-family:Arial,sans-serif; cursor:pointer; transition:background 0.2s; }
+  #prevBtn { background:#1e293b; color:#fff; }
+  #playBtn { background:#0e91e8; color:#fff; font-weight:bold; padding:14px 32px; }
+  #nextBtn { background:#1e293b; color:#fff; }
+</style>
 </head>
 <body>
-<header>
-<h1>One Wave Radio</h1>
-</header>
-<nav>
-<a href="index.html">Home</a>
-<a href="listen.html">Listen Live</a>
-<a href="news.html">News</a>
-<a href="weather.html">Weather</a>
-<a href="about.html">About</a>
-</nav>
-<section id="player-section">
-<h2>Listen Live</h2>
-<audio id="player" crossorigin="anonymous" controls></audio>
-<br><br>
-<p id="trackTitle">Loading...</p>
-<p>Broadcasting 24/7</p>
-<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:20px;">
-  <button id="prevBtn" onclick="playPrev()" style="background:#1e293b;color:#fff;border:none;padding:12px 22px;border-radius:12px;font-size:16px;font-family:Arial,sans-serif;cursor:pointer;transition:background 0.2s;">&#9198; Skip Back</button>
-  <button id="playBtn" onclick="playNext()" style="background:#e91e8a;color:#fff;border:none;padding:14px 32px;border-radius:12px;font-size:18px;font-family:Arial,sans-serif;cursor:pointer;font-weight:bold;transition:background 0.2s;">&#127925; Listen Live</button>
-  <button id="nextBtn" onclick="skipForward()" style="background:#1e293b;color:#fff;border:none;padding:12px 22px;border-radius:12px;font-size:16px;font-family:Arial,sans-serif;cursor:pointer;transition:background 0.2s;">Skip Next &#9197;</button>
-</div>
+<!-- PAGE 1: Hero Section -->
+<section class="hero-section">
+  <h1>One Wave Radio</h1>
+  <p class="subtitle">24/7 Original Music</p>
+  <p class="artist">by D Oliveira</p>
+  <!-- Listen Live button is BELOW D Oliveira text -->
+  <div>
+    <a href="#player" class="btn btn-primary" onclick="document.getElementById('player').play()">Listen Live</a>
+    <a href="#schedule" class="btn btn-outline">View Schedule</a>
+  </div>
 </section>
+
+<!-- PAGE 2: Player Section -->
+<section class="player-section" id="player">
+  <h2>One Wave</h2>
+  <div class="radio-title">Radio</div>
+  <!-- Player controls are BELOW the word Radio -->
+  <audio id="player" crossorigin="anonymous" controls style="display:none"></audio>
+  <p id="trackTitle">Loading...</p>
+  <div class="player-controls">
+    <button id="prevBtn" onclick="playPrev()">&#x23EE; Skip Back</button>
+    <button id="playBtn" onclick="playNext()">&#x1F925; Listen Live</button>
+    <button id="nextBtn" onclick="skipForward()">Skip Next &#x23ED;</button>
+  </div>
+  <p class="broadcast-info">Broadcasting 24/7 : Shuffle Playlist</p>
+</section>
+
 <script>
+
 var bucketURL = "https://pub-2aa01387a331477abb91b2bed61747b9.r2.dev";
 var playlist = [
 "2000_futuristic_brandy.mp3",
@@ -112,6 +140,7 @@ function skipForward() {
 function playPrev() {
   startTrack(currentIndex - 1);
 }
+
 </script>
 </body>
 </html>
