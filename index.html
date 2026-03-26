@@ -12,7 +12,26 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Octokit for GitHub API -->
-  <script src="https://unpkg.com/@octokit/rest/dist-web/index.js"></script>
+  <script>
+class Octokit {
+  constructor(opts) {
+    var self = this;
+    self._auth = opts.auth;
+    self.rest = { repos: {
+      getContent: function(p) {
+        var url = "https://api.github.com/repos/" + p.owner + "/" + p.repo + "/contents/" + p.path;
+        return fetch(url, { headers: { Authorization: "token " + self._auth, Accept: "application/vnd.github.v3+json" } }).then(function(r) { if (!r.ok) throw new Error("GitHub API " + r.status); return r.json(); }).then(function(d) { return { data: d }; });
+      },
+      createOrUpdateFileContents: function(p) {
+        var url = "https://api.github.com/repos/" + p.owner + "/" + p.repo + "/contents/" + p.path;
+        var body = { message: p.message, content: p.content };
+        if (p.sha) body.sha = p.sha;
+        return fetch(url, { method: "PUT", headers: { Authorization: "token " + self._auth, Accept: "application/vnd.github.v3+json", "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function(r) { if (!r.ok) return r.json().then(function(e) { throw new Error(e.message || "GitHub API " + r.status); }); return r.json(); }).then(function(d) { return { data: d }; });
+      }
+    }};
+  }
+}
+</script>
   <!-- react-beautiful-dnd -->
   <script src="https://unpkg.com/react-beautiful-dnd@13.1.1/dist/react-beautiful-dnd.min.js"></script>
   <!-- Font Awesome -->
