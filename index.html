@@ -36,11 +36,7 @@
       .block-wrapper .preview-area > section { min-height: 100%; background-size: contain; background-position: center; }
   
       .block-wrapper { transition: box-shadow 0.2s; }
-      .block-wrapper:hover .upload-overlay { opacity: 1; }
-      .upload-overlay { opacity: 0; transition: opacity 0.2s; position: absolute; top: 8px; right: 8px; z-index: 10; }
-      .btn-element { cursor: move; transition: box-shadow 0.2s; }
-      .btn-element:hover { box-shadow: 0 0 0 2px #8b5cf6, 0 4px 12px rgba(139,92,246,0.3); }
-      .block-size-badge { position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.6); color: #9ca3af; font-size: 10px; padding: 2px 6px; border-radius: 4px; z-index: 5; pointer-events: none; }
+      .btn-element:hover { box-shadow: 0 0 0 2px #8b5cf6; }
     </style>
 </head>
 <body>
@@ -244,10 +240,9 @@
           const parsed = parseHTMLToBlocks(content);
           if (parsed.length > 0) {
             setBlocks(parsed);
-              // Set default 1640x1130 size for all loaded blocks
-              const defaultSizes = {};
-              parsed.forEach(b => { defaultSizes[b.uid] = { width: 1640, height: 1130 }; });
-              setBlockSizes(prev => ({ ...prev, ...defaultSizes }));
+              const defSz = {};
+              parsed.forEach(b => { defSz[b.uid] = { width: 1640, height: 1130 }; });
+              setBlockSizes(prev => ({ ...prev, ...defSz }));
             setMessage({ text: `Loaded ${parsed.length} blocks from repo`, type: 'success' });
           } else {
             // Start with default blocks
@@ -571,28 +566,16 @@ ${blocks.map(b => b.html).join('\n')}
     };
 
     // ---- Add Photo Tool ----
-    
-      // Add Adjustable Button to a specific block
-      const addButtonToBlock = (blockUid) => {
+    const addButtonToBlock = (blockUid) => {
         const label = prompt('Button label:', 'Click Me');
         if (!label) return;
         const link = prompt('Button link (URL):', '#');
         setOverlayElements(prev => [...prev, {
-          id: Date.now(),
-          type: 'button',
-          blockUid: blockUid,
-          content: label,
-          link: link || '#',
-          x: 50,
-          y: 50,
-          fontSize: 16,
-          color: '#ffffff',
-          bgColor: '#8b5cf6',
-          borderRadius: 8,
-          paddingX: 24,
-          paddingY: 12,
-          width: 160,
-          height: 48
+          id: Date.now(), type: 'button', blockUid: blockUid,
+          content: label, link: link || '#',
+          x: 50, y: 50, fontSize: 16, color: '#ffffff',
+          bgColor: '#8b5cf6', borderRadius: 8,
+          paddingX: 24, paddingY: 12, width: 160, height: 48
         }]);
       };
 
@@ -786,6 +769,13 @@ ${blocks.map(b => b.html).join('\n')}
             >
               <i class="fas fa-image"></i> Add Photo
             </button>
+                <button
+                  onClick={() => addButtonToBlock(block.uid)}
+                  class="text-gray-600 hover:text-purple-400 transition px-2 py-1"
+                  title="Add adjustable button"
+                >
+                  <i class="fas fa-plus-square"></i>
+                </button>
             <button
                 onClick={() => { setOctokit(null); setBlocks([]); }}
                 class="text-gray-400 hover:text-white text-sm transition"
@@ -892,7 +882,6 @@ ${blocks.map(b => b.html).join('\n')}
                                   </button>
                     <button
                         onClick={() => handleBgUpload(block.uid)}
-                          <button onClick={() => addButtonToBlock(block.uid)} style={{ background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 8px', cursor: 'pointer', fontSize: '11px', marginLeft: '4px' }}><i className="fas fa-plus-square"></i> Add Button</button>
                         class="text-gray-600 hover:text-purple-400 transition px-2 py-1"
                         title="Set background image"
                     >
@@ -996,14 +985,7 @@ ${blocks.map(b => b.html).join('\n')}
                     }}
                   >
                     {el.type === 'text' && <span>{el.content}</span>}
-                    {el.type === 'button' && <a href={el.link || '#'} target="_blank" rel="noopener noreferrer"
-                          style={{ display: 'inline-block', padding: (el.paddingY||12)+'px '+(el.paddingX||24)+'px',
-                            backgroundColor: el.bgColor || '#8b5cf6', color: el.color || '#ffffff',
-                            borderRadius: (el.borderRadius||8)+'px', fontSize: (el.fontSize||16)+'px',
-                            fontWeight: 'bold', textDecoration: 'none', cursor: 'pointer',
-                            textAlign: 'center', lineHeight: '1.2', border: 'none',
-                            width: '100%', height: '100%', boxSizing: 'border-box',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{el.content}</a>}
+                    {el.type === 'button' && <a href={el.link || '#'} target="_blank" rel="noopener noreferrer" style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:(el.paddingY||12)+'px '+(el.paddingX||24)+'px', backgroundColor:el.bgColor||'#8b5cf6', color:el.color||'#fff', borderRadius:(el.borderRadius||8)+'px', fontSize:(el.fontSize||16)+'px', fontWeight:'bold', textDecoration:'none', cursor:'pointer', width:'100%', height:'100%', boxSizing:'border-box' }}>{el.content}</a>}
                         {el.type === 'photo' && <img src={el.content} alt="overlay" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />}
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteOverlayElement(el.id); }}
