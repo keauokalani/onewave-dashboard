@@ -3,13 +3,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>One Wave Radio</title>
+  <title>OneWave Studio – Site Builder</title>
+  <!-- React 18 -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Octokit for GitHub API -->
+  <script src="https://unpkg.com/@octokit/rest/dist-web/index.js"></script>
+  <!-- react-beautiful-dnd -->
+  <script src="https://unpkg.com/react-beautiful-dnd@13.1.1/dist/react-beautiful-dnd.min.js"></script>
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>body { margin: 0; font-family: system-ui, sans-serif; background: #0f0f0f; color: #fff; }</style>
+  <style>
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #0f0f0f; color: #fff; }
+    .editable:hover { outline: 2px dashed #f472b6; cursor: text; }
+    .block-wrapper:hover { box-shadow: 0 0 0 2px #818cf8; }
+    .drag-handle:hover { color: #f472b6; }
+      .block-wrapper { position: relative; }
+      .resize-handle { position:absolute; bottom:0; right:0; width:20px; height:20px; cursor:nwse-resize; z-index:10; }
+      .resize-handle::after { content:""; position:absolute; bottom:3px; right:3px; width:10px; height:10px; border-right:2px solid #666; border-bottom:2px solid #666; opacity:0.5; }
+      .resize-handle:hover::after { opacity:1; border-color:#f472b6; }
+      .resize-handle-right { position:absolute; top:40px; right:0; bottom:20px; width:6px; cursor:ew-resize; z-index:10; opacity:0; background:#f472b6; border-radius:3px; transition:opacity 0.2s; }
+      .resize-handle-bottom { position:absolute; bottom:0; left:20px; right:20px; height:6px; cursor:ns-resize; z-index:10; opacity:0; background:#f472b6; border-radius:3px; transition:opacity 0.2s; }
+      .block-wrapper:hover .resize-handle-right, .block-wrapper:hover .resize-handle-bottom { opacity:0.4; }
+      .resize-handle-right:hover, .resize-handle-bottom:hover { opacity:0.8; }
+      .block-wrapper.resizing-active { user-select:none; }
+      .block-wrapper { display: flex; flex-direction: column; }
+      .block-wrapper .preview-area { flex: 1; overflow: hidden; }
+      .block-wrapper .preview-area > section { min-height: 100%; background-size: contain; background-position: center; }
+  
+      .block-wrapper { transition: box-shadow 0.2s; }
+      .block-wrapper:hover .upload-overlay { opacity: 1; }
+      .upload-overlay { opacity: 0; transition: opacity 0.2s; position: absolute; top: 8px; right: 8px; z-index: 10; }
+      .btn-element { cursor: move; transition: box-shadow 0.2s; }
+      .btn-element:hover { box-shadow: 0 0 0 2px #8b5cf6, 0 4px 12px rgba(139,92,246,0.3); }
+      .block-size-badge { position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.6); color: #9ca3af; font-size: 10px; padding: 2px 6px; border-radius: 4px; z-index: 5; pointer-events: none; }
+    </style>
 </head>
 <body>
-<section class="relative bg-gradient-to-br from-purple-900 via-black to-blue-900 py-24 text-center overflow-hidden">
+
+<style id="auth-gate-styles">
+#auth-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0a0a2e 0%,#1a1a4e 50%,#0d0d3d 100%);display:flex;justify-content:center;align-items:center;z-index:999999;font-family:Arial,sans-serif}
+#auth-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:50px 40px;text-align:center;backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(0,0,0,0.5);max-width:420px;width:90%}
+#auth-box h1{color:#fff;font-size:28px;margin:0 0 8px;background:linear-gradient(135deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#auth-box p{color:rgba(255,255,255,0.6);margin:0 0 30px;font-size:14px}
+#auth-box input[type=password]{width:100%;padding:14px 18px;border:1px solid rgba(255,255,255,0.2);border-radius:12px;background:rgba(255,255,255,0.06);color:#fff;font-size:16px;outline:none;box-sizing:border-box;margin-bottom:16px}
+#auth-box input[type=password]:focus{border-color:#00d2ff}
+#auth-box button{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#00d2ff,#7b2ff7);color:#fff;font-size:16px;font-weight:bold;cursor:pointer}
+#auth-box button:hover{opacity:0.9}
+#auth-error{color:#ff6b6b;font-size:13px;margin-top:12px;display:none}
+</style>
+<div id="auth-overlay"><div id="auth-box"><div style="font-size:48px;margin-bottom:16px">&#127754;</div><h1>OneWave Studio</h1><p>Private Dashboard - Authorized Access Only</p><form id="auth-form" onsubmit="return checkAuth()"><input type="password" id="auth-password" placeholder="Enter access password" autofocus autocomplete="off"><button type="submit">Unlock Dashboard</button><div id="auth-error">Incorrect password. Access denied.</div></form></div></div>
+
+<div id="dashboard-content" style="display:none">
+
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { DragDropContext, Droppable, Draggable } = window.ReactBeautifulDnd;
+
+    // ─── BLOCK TEMPLATES ─────────────────────────────────────────────────
+    const BLOCK_TEMPLATES = {
+      hero: {
+        id: 'hero',
+        name: 'Hero Header',
+        icon: 'fa-star',
+        html: `<section class="relative bg-gradient-to-br from-purple-900 via-black to-blue-900 py-24 text-center overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-r from-purple-900 to-blue-900 opacity-50"></div>
           <div class="relative z-10 max-w-4xl mx-auto px-4">
             <h1 class="text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-purple-400" data-field="title" editable>One Wave Radio</h1>
@@ -19,8 +81,13 @@
               <a href="#schedule" class="border border-white/30 hover:border-white px-8 py-3 rounded-full font-semibold transition" editable>View Schedule</a>
             </div>
           </div>
-        </section>
-<section class="py-20 bg-black text-center relative overflow-hidden">
+        </section>`
+      },
+      player: {
+        id: 'player',
+        name: 'Audio Player',
+        icon: 'fa-play-circle',
+        html: `<section class="py-20 bg-black text-center relative overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-r from-purple-900 to-blue-900 opacity-50"></div>
           <div class="relative z-10 max-w-3xl mx-auto px-4">
             <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-pink-500 animate-pulse flex items-center justify-center">
@@ -32,8 +99,13 @@
               <source src="https://your-cloudflare-domain.com/stream.mp3" type="audio/mpeg">
             </audio>
           </div>
-        </section>
-<section class="py-20 bg-gray-950" id="schedule">
+        </section>`
+      },
+      schedule: {
+        id: 'schedule',
+        name: 'Schedule Grid',
+        icon: 'fa-calendar',
+        html: `<section class="py-20 bg-gray-950" id="schedule">
           <div class="max-w-6xl mx-auto px-4">
             <h2 class="text-4xl font-bold text-center mb-12" data-field="title" editable>Broadcast Schedule</h2>
             <div class="grid md:grid-cols-3 gap-6">
@@ -54,14 +126,962 @@
               </div>
             </div>
           </div>
-        </section>
-<section class="py-20 bg-black">
+        </section>`
+      },
+      about: {
+        id: 'about',
+        name: 'About Text',
+        icon: 'fa-info-circle',
+        html: `<section class="py-20 bg-black">
           <div class="max-w-3xl mx-auto px-4 text-center">
             <h2 class="text-4xl font-bold mb-6" data-field="title" editable>About One Wave Radio</h2>
             <p class="text-gray-300 text-lg leading-relaxed" data-field="description" editable>
               One Wave Radio is an independent internet radio station bringing you curated music, live DJ sets, and community-driven content 24/7. Ride the wave with us.
             </p>
           </div>
-        </section>
+        </section>`
+      }
+    };
+
+    // ─── MAIN APP ──────────────────────────────────────────────────
+    function App() {
+      const [octokit, setOctokit] = useState(null);
+      const [config, setConfig] = useState({
+        token: '',
+        owner: '',
+        repo: 'onewaveradio.com',
+        path: 'index.html'
+      });
+      const [blocks, setBlocks] = useState([]);
+      const [blockSizes, setBlockSizes] = useState({});
+      const [buttonPositions, setButtonPositions] = useState({});
+      const [buttonsLocked, setButtonsLocked] = useState(true);
+      const buttonsLockedRef = useRef(true);
+      const [loading, setLoading] = useState(false);
+      const [message, setMessage] = useState({ text: '', type: '' });
+      const previewRef = useRef(null);
+    const [overlayElements, setOverlayElements] = useState([]);
+    const overlayIdCounter = useRef(1);
+
+      // Connect to GitHub
+      const connectGitHub = async () => {
+        try {
+          setLoading(true);
+          const kit = new Octokit({ auth: config.token });
+          // Verify connection
+          await kit.rest.users.getAuthenticated();
+          setOctokit(kit);
+          setMessage({ text: 'Connected to GitHub!', type: 'success' });
+          // Try to load existing file
+          await fetchFile(kit);
+        } catch (err) {
+          setMessage({ text: 'Connection failed: ' + err.message, type: 'error' });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+
+      // Demo Mode - load default blocks without GitHub
+      const loadDemo = () => {
+        setOctokit({ demo: true });
+        setBlocks([
+          { ...BLOCK_TEMPLATES.hero, uid: Date.now() + '-hero' },
+          { ...BLOCK_TEMPLATES.player, uid: Date.now() + '-player' },
+          { ...BLOCK_TEMPLATES.schedule, uid: Date.now() + '-schedule' },
+          { ...BLOCK_TEMPLATES.about, uid: Date.now() + '-about' }
+        ]);
+        setMessage({ text: 'Demo mode loaded with default templates!', type: 'success' });
+      };
+
+
+      // View generated HTML code
+      const [showCode, setShowCode] = useState(false);
+      const getFullHTML = () => {
+        var h = '<!DOCTYPE html>\n<html lang="en">\n<head>\n';
+        h += '  <meta charset="UTF-8" />\n';
+        h += '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n';
+        h += '  <title>One Wave Radio</title>\n';
+        h += '  <script src="https://cdn.tailwindcss.com"><\/script>\n';
+        h += '  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />\n';
+        h += '  <style>body { margin: 0; font-family: system-ui, sans-serif; background: #0f0f0f; color: #fff; }</style>\n';
+        h += '</head>\n<body>\n';
+        h += blocks.map(function(b) {
+          var tmpDiv = document.createElement('div');
+          tmpDiv.innerHTML = b.html;
+          var btns = tmpDiv.querySelectorAll('[editable]');
+          var hasPositioned = false;
+          btns.forEach(function(btn, idx) {
+            var posKey = b.uid + '-' + idx;
+            var pos = buttonPositions[posKey];
+            if (pos) {
+              btn.style.position = 'absolute';
+              btn.style.left = pos.left + 'px';
+              btn.style.top = pos.top + 'px';
+              hasPositioned = true;
+            }
+          });
+          if (hasPositioned) {
+            var secs = tmpDiv.querySelectorAll('section');
+            secs.forEach(function(s) { s.style.position = 'relative'; });
+          }
+          return tmpDiv.innerHTML;
+        }).join('\n');
+        h += '\n</body>\n</html>';
+        return h;
+      };
+
+            // Fetch existing file from repo
+      const fetchFile = async (kit) => {
+        try {
+          const { data } = await kit.rest.repos.getContent({
+            owner: config.owner,
+            repo: config.repo,
+            path: config.path,
+          });
+          const content = atob(data.content);
+          // Parse HTML to blocks
+          const parsed = parseHTMLToBlocks(content);
+          if (parsed.length > 0) {
+            setBlocks(parsed);
+              // Set default 1640x1130 size for all loaded blocks
+              const defaultSizes = {};
+              parsed.forEach(b => { defaultSizes[b.uid] = { width: 1640, height: 1130 }; });
+              setBlockSizes(prev => ({ ...prev, ...defaultSizes }));
+            setMessage({ text: `Loaded ${parsed.length} blocks from repo`, type: 'success' });
+          } else {
+            // Start with default blocks
+            setBlocks([
+              { ...BLOCK_TEMPLATES.hero, uid: Date.now() + '-hero' },
+              { ...BLOCK_TEMPLATES.player, uid: Date.now() + '-player' },
+              { ...BLOCK_TEMPLATES.schedule, uid: Date.now() + '-schedule' },
+              { ...BLOCK_TEMPLATES.about, uid: Date.now() + '-about' }
+            ]);
+          }
+        } catch (err) {
+          // File not found – start fresh with defaults
+          setBlocks([
+            { ...BLOCK_TEMPLATES.hero, uid: Date.now() + '-hero' },
+            { ...BLOCK_TEMPLATES.player, uid: Date.now() + '-player' },
+            { ...BLOCK_TEMPLATES.schedule, uid: Date.now() + '-schedule' },
+            { ...BLOCK_TEMPLATES.about, uid: Date.now() + '-about' }
+          ]);
+          setMessage({ text: 'Starting with default template', type: 'info' });
+        }
+      };
+
+      // Parse HTML string back into blocks
+      const parseHTMLToBlocks = (html) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const sections = doc.querySelectorAll('section');
+        return Array.from(sections).map((section, i) => ({
+          uid: Date.now() + '-' + i,
+          id: 'custom',
+          name: section.querySelector('h2,h1')?.textContent || 'Block',
+          icon: 'fa-puzzle-piece',
+          html: section.outerHTML
+        }));
+      };
+
+      // Add a new block
+      const addBlock = (templateId) => {
+        const newBlockUid = Date.now() + '-' + templateId;
+        setBlockSizes(prev => ({ ...prev, [newBlockUid]: { width: 1640, height: 1130 } }));
+        const template = BLOCK_TEMPLATES[templateId];
+        setBlocks(prev => [...prev, {
+          ...template,
+          uid: newBlockUid
+        }]);
+      };
+
+  
+      // Resize handler functions
+      const resizingRef = useRef(null);
+      const buttonDragRef = useRef({ active: false, blockUid: null, btnIndex: null, startX: 0, startY: 0, origLeft: 0, origTop: 0, el: null });
+
+      const startResize = (e, blockUid, direction) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const blockEl = e.target.closest('.block-wrapper');
+        if (!blockEl) return;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startWidth = blockEl.offsetWidth;
+        const startHeight = blockEl.offsetHeight;
+        blockEl.classList.add('resizing-active');
+
+        resizingRef.current = { blockUid, direction, startX, startY, startWidth, startHeight, blockEl };
+
+        const onMouseMove = (ev) => {
+          if (!resizingRef.current) return;
+          const ref = resizingRef.current;
+          let newWidth = ref.startWidth;
+          let newHeight = ref.startHeight;
+
+          if (ref.direction === 'both' || ref.direction === 'right') {
+            newWidth = Math.max(200, ref.startWidth + (ev.clientX - ref.startX));
+          }
+          if (ref.direction === 'both' || ref.direction === 'bottom') {
+            newHeight = Math.max(80, ref.startHeight + (ev.clientY - ref.startY));
+          }
+
+          setBlockSizes(prev => ({
+            ...prev,
+            [ref.blockUid]: {
+              ...(prev[ref.blockUid] || {}),
+              width: newWidth,
+              height: newHeight
+            }
+          }));
+        };
+
+        const onMouseUp = () => {
+          if (resizingRef.current && resizingRef.current.blockEl) {
+            resizingRef.current.blockEl.classList.remove('resizing-active');
+          }
+          resizingRef.current = null;
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      };
+
+    // Drag end handler
+      const onDragEnd = (result) => {
+        if (!result.destination) return;
+        const items = Array.from(blocks);
+        const [reordered] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reordered);
+        setBlocks(items);
+      };
+
+      // Update block HTML
+      const updateBlock = (uid, newHtml) => {
+        setBlocks(prev => prev.map(b =>
+          b.uid === uid ? { ...b, html: newHtml } : b
+        ));
+      };
+
+      // Delete block
+      const deleteBlock = (uid) => {
+        setBlocks(prev => prev.filter(b => b.uid !== uid));
+      };
+
+    const handleBgUpload = (uid) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target.result;
+          setBlocks(prev => prev.map(b => {
+            if (b.uid !== uid) return b;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(b.html, 'text/html');
+            const el = doc.body.firstElementChild;
+            if (el) {
+              el.style.backgroundImage = 'url(' + dataUrl + ')';
+              el.style.backgroundSize = 'contain';
+              el.style.backgroundPosition = 'center';
+              el.style.backgroundRepeat = 'no-repeat';
+              return { ...b, html: el.outerHTML };
+            }
+            return b;
+          }));
+          setMessage({ text: 'Background image applied!', type: 'success' });
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    };
+
+
+
+
+      // ---- Button Drag Handler Functions ----
+      const startButtonDrag = (e, blockUid, btnIndex, btnEl) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const parentRect = btnEl.closest('.preview-area').getBoundingClientRect();
+        const rect = btnEl.getBoundingClientRect();
+        const posKey = blockUid + '-' + btnIndex;
+        const existing = buttonPositions[posKey];
+        const currentLeft = existing ? existing.left : rect.left - parentRect.left;
+        const currentTop = existing ? existing.top : rect.top - parentRect.top;
+        
+        buttonDragRef.current = {
+          active: true,
+          blockUid: blockUid,
+          btnIndex: btnIndex,
+          startX: e.clientX,
+          startY: e.clientY,
+          origLeft: currentLeft,
+          origTop: currentTop,
+          el: btnEl,
+          parentRect: parentRect,
+          moved: false
+        };
+        btnEl.classList.add('btn-dragging');
+        if (!existing) {
+          btnEl.style.position = 'absolute';
+          btnEl.style.left = currentLeft + 'px';
+          btnEl.style.top = currentTop + 'px';
+        }
+        
+        const onMove = (ev) => {
+          if (!buttonDragRef.current.active) return;
+          const dx = ev.clientX - buttonDragRef.current.startX;
+          const dy = ev.clientY - buttonDragRef.current.startY;
+          if (Math.abs(dx) > 2 || Math.abs(dy) > 2) buttonDragRef.current.moved = true;
+          const newLeft = buttonDragRef.current.origLeft + dx;
+          const newTop = buttonDragRef.current.origTop + dy;
+          buttonDragRef.current.el.style.left = newLeft + 'px';
+          buttonDragRef.current.el.style.top = newTop + 'px';
+          buttonDragRef.current.el.style.position = 'absolute';
+        };
+        
+        const onUp = (ev) => {
+          if (!buttonDragRef.current.active) return;
+          const dx = ev.clientX - buttonDragRef.current.startX;
+          const dy = ev.clientY - buttonDragRef.current.startY;
+          const finalLeft = buttonDragRef.current.origLeft + dx;
+          const finalTop = buttonDragRef.current.origTop + dy;
+          const bUid = buttonDragRef.current.blockUid;
+          const bIdx = buttonDragRef.current.btnIndex;
+          const pk = bUid + '-' + bIdx;
+          const wasMoved = buttonDragRef.current.moved;
+          
+          buttonDragRef.current.el.classList.remove('btn-dragging');
+          buttonDragRef.current.active = false;
+          
+          if (wasMoved) {
+            setButtonPositions(prev => ({
+              ...prev,
+              [pk]: { left: finalLeft, top: finalTop }
+            }));
+          }
+          
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      };
+
+      const applyButtonPositions = (previewEl, blockUid) => {
+        buttonsLockedRef.current = buttonsLocked;
+        if (!previewEl) return;
+        const btns = previewEl.querySelectorAll('[editable]');
+        previewEl.style.position = 'relative';
+        btns.forEach((btn, idx) => {
+          const posKey = blockUid + '-' + idx;
+          const pos = buttonPositions[posKey];
+          if (pos) {
+            btn.style.position = 'absolute';
+            btn.style.left = pos.left + 'px';
+            btn.style.top = pos.top + 'px';
+          }
+          btn.style.cursor = buttonsLockedRef.current ? 'default' : 'grab';
+          btn.onmousedown = (e) => {
+            if (buttonsLockedRef.current) return;
+            if (e.button !== 0) return;
+            startButtonDrag(e, blockUid, idx, btn);
+          };
+        });
+      };
+
+      // Move block up or down
+      const moveBlock = (index, direction) => {
+        const newBlocks = [...blocks];
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= newBlocks.length) return;
+        [newBlocks[index], newBlocks[targetIndex]] = [newBlocks[targetIndex], newBlocks[index]];
+        setBlocks(newBlocks);
+      };
+
+            // Save to GitHub
+      const saveToGitHub = async () => {
+        if (!octokit || octokit.demo) {
+          setMessage({ text: 'Demo mode: Save to GitHub disabled. Connect with a real token to enable saving.', type: 'info' });
+          setLoading(false);
+          return;
+        }
+        setLoading(true);
+        try {
+          const fullHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>One Wave Radio</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>body { margin: 0; font-family: system-ui, sans-serif; background: #0f0f0f; color: #fff; }</style>
+</head>
+<body>
+${blocks.map(b => b.html).join('\n')}
+</body>
+</html>`;
+
+          // Get current file SHA if exists
+          let sha;
+          try {
+            const { data } = await octokit.rest.repos.getContent({
+              owner: config.owner,
+              repo: config.repo,
+              path: config.path,
+            });
+            sha = data.sha;
+          } catch (e) {
+            // File doesn't exist yet
+          }
+
+          await octokit.rest.repos.createOrUpdateFileContents({
+            owner: config.owner,
+            repo: config.repo,
+            path: config.path,
+            message: 'Update site via OneWave Studio',
+            content: btoa(unescape(encodeURIComponent(fullHTML))),
+            ...(sha ? { sha } : {})
+          });
+
+          setMessage({ text: 'Published to GitHub!', type: 'success' });
+        } catch (err) {
+          setMessage({ text: 'Publish failed: ' + err.message, type: 'error' });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+    
+    // ---- Add Text Tool ----
+    const addTextElement = () => {
+      const id = 'overlay-' + overlayIdCounter.current++;
+      setOverlayElements(prev => [...prev, {
+        id, type: 'text', content: 'Double-click to edit',
+        x: 100, y: 100, width: 200, height: 40, fontSize: 16
+      }]);
+    };
+
+    // ---- Add Photo Tool ----
+    
+      // Add Adjustable Button to a specific block
+      const addButtonToBlock = (blockUid) => {
+        const label = prompt('Button label:', 'Click Me');
+        if (!label) return;
+        const link = prompt('Button link (URL):', '#');
+        setOverlayElements(prev => [...prev, {
+          id: Date.now(),
+          type: 'button',
+          blockUid: blockUid,
+          content: label,
+          link: link || '#',
+          x: 50,
+          y: 50,
+          fontSize: 16,
+          color: '#ffffff',
+          bgColor: '#8b5cf6',
+          borderRadius: 8,
+          paddingX: 24,
+          paddingY: 12,
+          width: 160,
+          height: 48
+        }]);
+      };
+
+      const addPhotoElement = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const id = 'overlay-' + overlayIdCounter.current++;
+          setOverlayElements(prev => [...prev, {
+            id, type: 'photo', src: ev.target.result,
+            x: 100, y: 150, width: 300, height: 200
+          }]);
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    };
+
+    // ---- Update overlay element ----
+    const updateOverlayElement = (id, updates) => {
+      setOverlayElements(prev => prev.map(el => el.id === id ? { ...el, ...updates } : el));
+    };
+
+    // ---- Delete overlay element ----
+    const deleteOverlayElement = (id) => {
+      setOverlayElements(prev => prev.filter(el => el.id !== id));
+    };
+
+
+    // ---- Drag overlay element ----
+    const startOverlayDrag = (e, id) => {
+      if (buttonsLockedRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const el = e.currentTarget.closest('.overlay-element');
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const origLeft = parseInt(el.style.left) || 0;
+      const origTop = parseInt(el.style.top) || 0;
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        updateOverlayElement(id, { x: origLeft + dx, y: origTop + dy });
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+
+    // ---- Resize overlay element ----
+    const startOverlayResize = (e, id, direction) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const elem = overlayElements.find(el => el.id === id);
+      if (!elem) return;
+      const origW = elem.width;
+      const origH = elem.height;
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        let updates = {};
+        if (direction === 'both' || direction === 'right') updates.width = Math.max(50, origW + dx);
+        if (direction === 'both' || direction === 'bottom') updates.height = Math.max(20, origH + dy);
+        updateOverlayElement(id, updates);
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+
+      // ─── RENDER ────────────────────────────────────────────────────
+      if (!octokit) {
+
+
+    return (
+          <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-purple-950">
+            <div class="bg-gray-900 p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-800">
+              <h1 class="text-3xl font-bold mb-2 text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-purple-400">
+                🎵 OneWave Studio
+              </h1>
+              <p class="text-gray-400 text-center mb-6">Connect your GitHub repo to start editing</p>
+              
+              {message.text && (
+                <div class={`mb-4 p-3 rounded-lg text-sm ${message.type === 'error' ? 'bg-red-900/50 text-red-300' : 'bg-green-900/50 text-green-300'}`}>
+                  {message.text}
+                </div>
+              )}
+
+              <div class="space-y-4">
+                <div>
+                  <label class="text-sm text-gray-400 block mb-1">GitHub Personal Access Token</label>
+                  <input
+                    type="password"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-pink-500 focus:outline-none"
+                    placeholder="ghp_xxxxxxxxxxxx"
+                    value={config.token}
+                    onChange={(e) => setConfig({ ...config, token: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-400 block mb-1">Owner (username)</label>
+                  <input
+                    type="text"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-pink-500 focus:outline-none"
+                    placeholder="onewaveradio"
+                    value={config.owner}
+                    onChange={(e) => setConfig({ ...config, owner: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-400 block mb-1">Repository</label>
+                  <input
+                    type="text"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-pink-500 focus:outline-none"
+                    placeholder="onewaveradio.com"
+                    value={config.repo}
+                    onChange={(e) => setConfig({ ...config, repo: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-400 block mb-1">File Path</label>
+                  <input
+                    type="text"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-pink-500 focus:outline-none"
+                    placeholder="index.html"
+                    value={config.path}
+                    onChange={(e) => setConfig({ ...config, path: e.target.value })}
+                  />
+                </div>
+                <button
+                  onClick={connectGitHub}
+                  disabled={loading || !config.token || !config.owner}
+                  class="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 py-3 rounded-lg font-semibold transition disabled:opacity-50"
+                >
+                  {loading ? 'Connecting...' : '🔗 Connect & Load Site'}
+                </button>
+              <button
+                onClick={loadDemo}
+                class="w-full py-3 mt-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transition-all"
+              >
+                🎮 Demo Mode (No GitHub Needed)
+              </button>
+              </div>
+
+              <p class="text-xs text-gray-600 mt-4 text-center">
+                ⚠️ Your token is stored in browser memory only (never saved to disk)
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div class="min-h-screen bg-gray-950">
+          {/* Header */}
+          <header class="bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+            <div class="flex items-center gap-3">
+              <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-purple-400">
+                🎵 OneWave Studio
+              </h1>
+              <span class="text-gray-500 text-sm">
+                {config.owner}/{config.repo}/{config.path}
+              </span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onClick={() => setButtonsLocked(prev => !prev)} title={buttonsLocked ? "Unlock buttons for repositioning" : "Lock buttons in place"} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', color: buttonsLocked ? '#f87171' : '#4ade80', cursor: 'pointer', padding: '4px 10px', marginRight: '12px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}><i className={buttonsLocked ? "fas fa-lock" : "fas fa-lock-open"}></i>{buttonsLocked ? "Locked" : "Unlocked"}</button>
+              <button
+              onClick={addTextElement}
+              title="Add a text element"
+              class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition flex items-center gap-1"
+            >
+              <i class="fas fa-font"></i> Add Text
+            </button>
+            <button
+              onClick={addPhotoElement}
+              title="Add a photo element"
+              class="px-3 py-1 rounded bg-green-600 hover:bg-green-500 text-white text-sm font-semibold transition flex items-center gap-1"
+            >
+              <i class="fas fa-image"></i> Add Photo
+            </button>
+            <button
+                onClick={() => { setOctokit(null); setBlocks([]); }}
+                class="text-gray-400 hover:text-white text-sm transition"
+              >
+                Disconnect
+              </button>
+              <button
+                onClick={() => setShowCode(!showCode)}
+                class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-semibold text-sm transition flex items-center gap-2"
+              >
+                <i class="fas fa-code"></i> View Code
+              </button>
+              <button
+                onClick={saveToGitHub}
+                disabled={loading}
+                class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 px-6 py-2 rounded-lg font-semibold transition disabled:opacity-50 flex items-center gap-2"
+              >
+                {loading ? (
+                  <><i class="fas fa-spinner fa-spin"></i> Publishing...</>
+                ) : (
+                  <><i class="fas fa-cloud-upload-alt"></i> Publish to GitHub</>
+                )}
+              </button>
+            </div>
+          </header>
+
+          {/* Message Bar */}
+          {message.text && (
+            <div class={`px-6 py-2 text-sm ${message.type === 'error' ? 'bg-red-900/50 text-red-300' : message.type === 'success' ? 'bg-green-900/50 text-green-300' : 'bg-blue-900/50 text-blue-300'}`}>
+              {message.text}
+              <button onClick={() => setMessage({ text: '', type: '' })} class="ml-4 opacity-50 hover:opacity-100">✕</button>
+            </div>
+          )}
+
+          <div class="flex">
+            {/* Sidebar */}
+            <aside class="w-64 bg-gray-900 border-r border-gray-800 p-4 min-h-[calc(100vh-57px)] sticky top-[57px]">
+              <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Add Blocks</h3>
+              <div class="space-y-2">
+                {Object.entries(BLOCK_TEMPLATES).map(([key, template]) => (
+                  <button
+                    key={key}
+                    onClick={() => addBlock(key)}
+                    class="w-full text-left px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition flex items-center gap-2 text-sm"
+                  >
+                    <i class={`fas ${template.icon} text-pink-400`}></i>
+                    {template.name}
+                  </button>
+                ))}
+              </div>
+              <div class="mt-6 p-3 bg-gray-800/50 rounded-lg">
+                <p class="text-xs text-gray-500">
+                  💡 <strong>Pro Tip:</strong> Click any text in the preview to edit it directly. Drag blocks to reorder.
+                </p>
+              </div>
+            </aside>
+
+            {/* Main Builder */}
+            <main class="flex-1 p-6" style={{ position: 'relative' }}>
+              <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="blocks">
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps} class="space-y-4">
+                      {blocks.length === 0 && (
+                        <div class="text-center py-20 text-gray-600">
+                          <i class="fas fa-plus-circle text-4xl mb-4 block"></i>
+                          <p>Add blocks from the sidebar to start building</p>
+                        </div>
+                      )}
+                      {blocks.map((block, index) => (
+                        <Draggable key={block.uid} draggableId={block.uid} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              class={`block-wrapper rounded-xl overflow-hidden border ${snapshot.isDragging ? 'border-pink-500 shadow-lg shadow-pink-500/20' : 'border-gray-800'}`}
+                      style={{ width: (blockSizes[block.uid]?.width || 1640) + 'px', height: (blockSizes[block.uid]?.height || 1130) + 'px', overflow: 'hidden' }}
+                            >
+                              {/* Block Controls */}
+                              <div class="bg-gray-900 px-4 py-2 flex items-center justify-between border-b border-gray-800">
+                                <div class="flex items-center gap-2" {...provided.dragHandleProps}>
+                                  <i class="fas fa-grip-vertical drag-handle text-gray-600 cursor-grab" title="Drag to reorder"></i>
+                                  <span class="text-sm text-gray-400">
+                                    <i class={`fas ${block.icon} mr-1`}></i>
+                                    {block.name}
+                                  </span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                  <button
+                                    onClick={() => moveBlock(index, 'up')}
+                                    class="text-gray-600 hover:text-blue-400 transition px-1"
+                                    title="Move up"
+                                    disabled={index === 0}
+                                  >
+                                    <i class="fas fa-chevron-up text-xs"></i>
+                                  </button>
+                                  <button
+                                    onClick={() => moveBlock(index, 'down')}
+                                    class="text-gray-600 hover:text-blue-400 transition px-1"
+                                    title="Move down"
+                                    disabled={index === blocks.length - 1}
+                                  >
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                  </button>
+                    <button
+                        onClick={() => handleBgUpload(block.uid)}
+                          <button onClick={() => addButtonToBlock(block.uid)} style={{ background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 8px', cursor: 'pointer', fontSize: '11px', marginLeft: '4px' }}><i className="fas fa-plus-square"></i> Add Button</button>
+                        class="text-gray-600 hover:text-purple-400 transition px-2 py-1"
+                        title="Set background image"
+                    >
+                        <i class="fas fa-image"></i>
+                    </button>
+                                  <button
+                                    onClick={() => deleteBlock(block.uid)}
+                                    class="text-gray-600 hover:text-red-400 transition px-2 py-1"
+                                    title="Delete block"
+                                  >
+                                    <i class="fas fa-trash-alt"></i>
+                                  </button>
+                                </div>
+                              </div>
+                              {/* Live Preview with Inline Editing */}
+                              <div
+                                ref={(el) => { if (el) applyButtonPositions(el, block.uid); }}
+                                class="preview-area"
+                                dangerouslySetInnerHTML={{ __html: block.html }}
+                                onClick={(e) => {
+                                  const el = e.target.closest('[editable]');
+                                  if (el) {
+                      if (!buttonsLockedRef.current) return;
+                                    const currentText = el.textContent;
+                                    const newText = prompt('Edit text:', currentText);
+                                    if (newText !== null && newText !== currentText) {
+                                      const temp = document.createElement('div');
+                                      temp.innerHTML = block.html;
+                                      const match = temp.querySelector(`[data-field="${el.dataset.field}"]`) || 
+                                                     Array.from(temp.querySelectorAll('[editable]')).find(n => n.textContent === currentText);
+                                      if (match) {
+                                        match.textContent = newText;
+                                        updateBlock(block.uid, temp.innerHTML);
+                                      }
+                                    }
+                                  }
+                                }}
+                              />
+                    {/* Resize Handles */}
+                    <div
+                      className="resize-handle"
+                      title="Drag to resize"
+                      onMouseDown={(e) => startResize(e, block.uid, 'both')}
+                    />
+                    <div
+                      className="resize-handle-right"
+                      title="Drag to resize width"
+                      onMouseDown={(e) => startResize(e, block.uid, 'right')}
+                    />
+                    <div
+                      className="resize-handle-bottom"
+                      title="Drag to resize height"
+                      onMouseDown={(e) => startResize(e, block.uid, 'bottom')}
+                    />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
+
+              {/* Overlay Elements */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 40 }}>
+                {overlayElements.map(el => (
+                  <div
+                    key={el.id}
+                    className="overlay-element"
+                    data-id={el.id}
+                    style={{
+                      position: 'absolute',
+                      left: el.x + 'px',
+                      top: el.y + 'px',
+                      width: el.width + 'px',
+                      height: el.height + 'px',
+                      border: '2px dashed rgba(236,72,153,0.7)',
+                      borderRadius: '4px',
+                      cursor: 'move',
+                      zIndex: 50,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: el.type === 'text' ? 'rgba(0,0,0,0.5)' : 'transparent',
+                      color: 'white',
+                      fontSize: (el.fontSize || 16) + 'px',
+                      userSelect: 'none',
+                      padding: '4px',
+                      boxSizing: 'border-box',
+                      pointerEvents: 'auto',
+                    }}
+                    onMouseDown={(e) => startOverlayDrag(e, el.id)}
+                    onDoubleClick={() => {
+                      if (el.type === 'text') {
+                        const newText = prompt('Edit text:', el.content);
+                        if (newText !== null) {
+                          updateOverlayElement(el.id, { content: newText });
+                        }
+                      }
+                    }}
+                  >
+                    {el.type === 'text' && <span>{el.content}</span>}
+                    {el.type === 'button' && <a href={el.link || '#'} target="_blank" rel="noopener noreferrer"
+                          style={{ display: 'inline-block', padding: (el.paddingY||12)+'px '+(el.paddingX||24)+'px',
+                            backgroundColor: el.bgColor || '#8b5cf6', color: el.color || '#ffffff',
+                            borderRadius: (el.borderRadius||8)+'px', fontSize: (el.fontSize||16)+'px',
+                            fontWeight: 'bold', textDecoration: 'none', cursor: 'pointer',
+                            textAlign: 'center', lineHeight: '1.2', border: 'none',
+                            width: '100%', height: '100%', boxSizing: 'border-box',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{el.content}</a>}
+                        {el.type === 'photo' && <img src={el.content} alt="overlay" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteOverlayElement(el.id); }}
+                      style={{
+                        position: 'absolute', top: '-10px', right: '-10px',
+                        background: '#ef4444', color: 'white', border: 'none',
+                        borderRadius: '50%', width: '20px', height: '20px',
+                        cursor: 'pointer', fontSize: '12px', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center', padding: 0,
+                        lineHeight: 1,
+                      }}
+                      title="Delete overlay"
+                    >&times;</button>
+                    <div
+                      style={{
+                        position: 'absolute', bottom: '-5px', right: '-5px',
+                        width: '10px', height: '10px', background: '#ec4899',
+                        cursor: 'nwse-resize', borderRadius: '2px',
+                      }}
+                      onMouseDown={(e) => { e.stopPropagation(); startOverlayResize(e, el.id); }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+
+              {/* Code Viewer Modal */}
+              {showCode && (
+                <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                  <div class="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-4xl max-h-[90vh] flex flex-col">
+                    <div class="flex items-center justify-between p-4 border-b border-gray-700">
+                      <h3 class="text-lg font-bold text-white"><i class="fas fa-code mr-2"></i>Generated HTML Code</h3>
+                      <div class="flex gap-2">
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(getFullHTML()); setMessage({ text: 'Code copied to clipboard!', type: 'success' }); }}
+                          class="px-3 py-1 rounded-lg bg-pink-600 hover:bg-pink-500 text-white text-sm font-semibold transition"
+                        >
+                          <i class="fas fa-copy mr-1"></i> Copy
+                        </button>
+                        <button
+                          onClick={() => { const w = window.open('','_blank'); w.document.write(getFullHTML()); w.document.close(); }}
+                          class="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition"
+                        >
+                          <i class="fas fa-eye mr-1"></i> Preview
+                        </button>
+                        <button
+                          onClick={() => setShowCode(false)}
+                          class="px-3 py-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm transition"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                    <pre class="p-4 overflow-auto flex-1 text-xs text-green-400 bg-gray-950 rounded-b-2xl"><code>{getFullHTML()}</code></pre>
+                  </div>
+                </div>
+              )}
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── MOUNT ─────────────────────────────────────────────────────
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+
+</div>
+
+<script id="auth-gate-script">
+(function(){
+var H="034c5253b305b3105104304670429ff4cf6a502d5732ecef2f511f0582a04584",K="ow_studio_auth";
+if(sessionStorage.getItem(K)===H){document.getElementById("auth-overlay").remove();document.getElementById("auth-gate-styles").remove();document.getElementById("auth-gate-script").remove();document.getElementById("dashboard-content").style.display="";return}
+var d=document.getElementById("dashboard-content");if(d)d.style.display="none";
+window.checkAuth=async function(){var p=document.getElementById("auth-password").value;var e=new TextEncoder();var b=await crypto.subtle.digest("SHA-256",e.encode(p));var a=Array.from(new Uint8Array(b));var h=a.map(function(x){return x.toString(16).padStart(2,"0")}).join("");if(h===H){sessionStorage.setItem(K,H);document.getElementById("auth-overlay").remove();document.getElementById("auth-gate-styles").remove();document.getElementById("auth-gate-script").remove();document.getElementById("dashboard-content").style.display=""}else{document.getElementById("auth-error").style.display="block";document.getElementById("auth-password").value="";document.getElementById("auth-password").focus()}return false};
+})();
+</script>
+
 </body>
 </html>
