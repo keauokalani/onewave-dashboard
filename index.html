@@ -12,7 +12,9 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Octokit for GitHub API -->
-  <script src="https://unpkg.com/@octokit/rest/dist-web/index.js"></script>
+  <script>
+(async()=>{const m=await import("https://esm.sh/@octokit/rest@20");window.Octokit=m.Octokit;document.dispatchEvent(new Event("octokit-ready"))})();
+</script>
   <!-- react-beautiful-dnd -->
   <script src="https://unpkg.com/react-beautiful-dnd@13.1.1/dist/react-beautiful-dnd.min.js"></script>
   <!-- Font Awesome -->
