@@ -1,0 +1,30 @@
+01|>             startButtonDrag(e, blockUid, idx, btn);
+02|>           };
+03|>         });
+04|>       };
+05|> 
+06|>       // Move block up or down
+07|>       const moveBlock = (index, direction) => {
+08|>         const newBlocks = [...blocks];
+09|>         const targetIndex = direction === 'up' ? index - 1 : index + 1;
+10|>         if (targetIndex < 0 || targetIndex >= newBlocks.length) return;
+11|>         [newBlocks[index], newBlocks[targetIndex]] = [newBlocks[targetIndex], newBlocks[index]];
+12|>         setBlocks(newBlocks);
+13|>       };
+14|> 
+15|>             // Save to GitHub
+16|224c480,484
+17|<         if (!octokit) return;
+18|---
+19|>         if (!octokit || octokit.demo) {
+20|>           setMessage({ text: 'Demo mode: Save to GitHub disabled. Connect with a real token to enable saving.', type: 'info' });
+21|>           setLoading(false);
+22|>           return;
+23|>         }
+24|335a596,601
+25|>               <button
+26|>                 onClick={loadDemo}
+27|>                 class="w-full py-3 mt-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transition-all"
+28|>               >
+29|>                 🎮 Demo Mode (No GitHub Needed)
+30|>               </button>

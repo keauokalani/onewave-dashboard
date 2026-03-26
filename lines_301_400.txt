@@ -1,0 +1,100 @@
+        h += '  <meta charset="UTF-8" />\n';
+        h += '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n';
+        h += '  <title>One Wave Radio</title>\n';
+        h += '  <script src="https://cdn.tailwindcss.com"><\/script>\n';
+        h += '  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />\n';
+        h += '  <style>body { margin: 0; font-family: system-ui, sans-serif; background: #0f0f0f; color: #fff; }</style>\n';
+        h += '</head>\n<body>\n';
+        h += blocks.map(function(b) {
+          var tmpDiv = document.createElement('div');
+          tmpDiv.innerHTML = b.html;
+          var btns = tmpDiv.querySelectorAll('[editable]');
+          var hasPositioned = false;
+          btns.forEach(function(btn, idx) {
+            var posKey = b.uid + '-' + idx;
+            var pos = buttonPositions[posKey];
+            if (pos) {
+              btn.style.position = 'absolute';
+              btn.style.left = pos.left + 'px';
+              btn.style.top = pos.top + 'px';
+              hasPositioned = true;
+            }
+          });
+          if (hasPositioned) {
+            var secs = tmpDiv.querySelectorAll('section');
+            secs.forEach(function(s) { s.style.position = 'relative'; });
+          }
+          return tmpDiv.innerHTML;
+        }).join('\n');
+        h += '\n</body>\n</html>';
+        return h;
+      };
+
+            // Fetch existing file from repo
+      const fetchFile = async (kit) => {
+        try {
+          const { data } = await kit.rest.repos.getContent({
+            owner: config.owner,
+            repo: config.repo,
+            path: config.path,
+          });
+          const content = atob(data.content);
+          // Parse HTML to blocks
+          const parsed = parseHTMLToBlocks(content);
+          if (parsed.length > 0) {
+            // Check if auto-save data exists - use it instead of repo data
+            const autoSaved = localStorage.getItem('ow_studio_autosave');
+            let restoredFromAutoSave = false;
+            if (autoSaved) {
+              try {
+                const savedState = JSON.parse(autoSaved);
+                if (savedState && savedState.blocks && savedState.blocks.length > 0) {
+                  setBlocks(savedState.blocks);
+                  if (savedState.blockSizes) setBlockSizes(savedState.blockSizes);
+                  if (savedState.buttonPositions) setButtonPositions(savedState.buttonPositions);
+                  if (savedState.buttonsLocked !== undefined) setButtonsLocked(savedState.buttonsLocked);
+                  if (savedState.overlayElements) setOverlayElements(savedState.overlayElements);
+                  restoredFromAutoSave = true;
+                  console.log('[AutoSave] Restored auto-saved state after connect');
+                  setMessage({ text: 'Auto-saved session restored! Your local changes are preserved.', type: 'success' });
+                }
+              } catch (e) {
+                console.warn('[AutoSave] Failed to parse auto-save on connect:', e);
+              }
+            }
+            if (!restoredFromAutoSave) {
+              setBlocks(parsed);
+              setMessage({ text: `Loaded ${parsed.length} blocks from repo`, type: 'success' });
+            }
+          } else {
+            // Start with default blocks
+            setBlocks([
+              { ...BLOCK_TEMPLATES.hero, uid: Date.now() + '-hero' },
+              { ...BLOCK_TEMPLATES.player, uid: Date.now() + '-player' },
+              { ...BLOCK_TEMPLATES.schedule, uid: Date.now() + '-schedule' },
+              { ...BLOCK_TEMPLATES.about, uid: Date.now() + '-about' }
+            ]);
+          }
+        } catch (err) {
+          // File not found – start fresh with defaults
+          setBlocks([
+            { ...BLOCK_TEMPLATES.hero, uid: Date.now() + '-hero' },
+            { ...BLOCK_TEMPLATES.player, uid: Date.now() + '-player' },
+            { ...BLOCK_TEMPLATES.schedule, uid: Date.now() + '-schedule' },
+            { ...BLOCK_TEMPLATES.about, uid: Date.now() + '-about' }
+          ]);
+          setMessage({ text: 'Starting with default template', type: 'info' });
+        }
+      };
+
+      // Parse HTML string back into blocks
+      const parseHTMLToBlocks = (html) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const sections = doc.querySelectorAll('section');
+        return Array.from(sections).map((section, i) => ({
+          uid: Date.now() + '-' + i,
+          id: 'custom',
+          name: section.querySelector('h2,h1')?.textContent || 'Block',
+          icon: 'fa-puzzle-piece',
+          html: section.outerHTML

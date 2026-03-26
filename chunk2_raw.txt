@@ -1,0 +1,90 @@
+>         const startY = e.clientY;
+>         const startWidth = blockEl.offsetWidth;
+>         const startHeight = blockEl.offsetHeight;
+>         blockEl.classList.add('resizing-active');
+> 
+>         resizingRef.current = { blockUid, direction, startX, startY, startWidth, startHeight, blockEl };
+> 
+>         const onMouseMove = (ev) => {
+>           if (!resizingRef.current) return;
+>           const ref = resizingRef.current;
+>           let newWidth = ref.startWidth;
+>           let newHeight = ref.startHeight;
+> 
+>           if (ref.direction === 'both' || ref.direction === 'right') {
+>             newWidth = Math.max(200, ref.startWidth + (ev.clientX - ref.startX));
+>           }
+>           if (ref.direction === 'both' || ref.direction === 'bottom') {
+>             newHeight = Math.max(80, ref.startHeight + (ev.clientY - ref.startY));
+>           }
+> 
+>           setBlockSizes(prev => ({
+>             ...prev,
+>             [ref.blockUid]: {
+>               ...(prev[ref.blockUid] || {}),
+>               width: newWidth,
+>               height: newHeight
+>             }
+>           }));
+>         };
+> 
+>         const onMouseUp = () => {
+>           if (resizingRef.current && resizingRef.current.blockEl) {
+>             resizingRef.current.blockEl.classList.remove('resizing-active');
+>           }
+>           resizingRef.current = null;
+>           document.removeEventListener('mousemove', onMouseMove);
+>           document.removeEventListener('mouseup', onMouseUp);
+>         };
+> 
+>         document.addEventListener('mousemove', onMouseMove);
+>         document.addEventListener('mouseup', onMouseUp);
+>       };
+> 
+>     // Drag end handler
+222c342,478
+<       // Save to GitHub
+---
+>     const handleBgUpload = (uid) => {
+>       const input = document.createElement('input');
+>       input.type = 'file';
+>       input.accept = 'image/*';
+>       input.onchange = (e) => {
+>         const file = e.target.files[0];
+>         if (!file) return;
+>         const reader = new FileReader();
+>         reader.onload = (ev) => {
+>           const dataUrl = ev.target.result;
+>           setBlocks(prev => prev.map(b => {
+>             if (b.uid !== uid) return b;
+>             const parser = new DOMParser();
+>             const doc = parser.parseFromString(b.html, 'text/html');
+>             const el = doc.body.firstElementChild;
+>             if (el) {
+>               el.style.backgroundImage = 'url(' + dataUrl + ')';
+>               el.style.backgroundSize = 'contain';
+>               el.style.backgroundPosition = 'center';
+>               el.style.backgroundRepeat = 'no-repeat';
+>               return { ...b, html: el.outerHTML };
+>             }
+>             return b;
+>           }));
+>           setMessage({ text: 'Background image applied!', type: 'success' });
+>         };
+>         reader.readAsDataURL(file);
+>       };
+>       input.click();
+>     };
+> 
+> 
+> 
+> 
+>       // ---- Button Drag Handler Functions ----
+>       const startButtonDrag = (e, blockUid, btnIndex, btnEl) => {
+>         e.preventDefault();
+>         e.stopPropagation();
+>         const parentRect = btnEl.closest('.preview-area').getBoundingClientRect();
+>         const rect = btnEl.getBoundingClientRect();
+>         const posKey = blockUid + '-' + btnIndex;
+>         const existing = buttonPositions[posKey];
+>         const currentLeft = existing ? existing.left : rect.left - parentRect.left;

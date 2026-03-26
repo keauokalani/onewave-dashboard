@@ -1,0 +1,100 @@
+          };
+
+          // Persist GitHub config to localStorage (encrypted) whenever it changes
+          React.useEffect(() => {
+            try {
+              const encrypted = encryptConfig(config);
+              if (encrypted) localStorage.setItem('ow_studio_config', encrypted);
+            } catch(e) {}
+          }, [config]);
+
+    // ============================================================
+    // AUTO-SAVE: Save all studio state to localStorage every 5 seconds
+    // ============================================================
+    const AUTO_SAVE_KEY = 'ow_studio_autosave';
+    
+    React.useEffect(() => {
+      const intervalId = setInterval(() => {
+        try {
+          // Only save if there are blocks to save (user has started working)
+          if (blocks.length === 0) return;
+          
+          const studioState = {
+            blocks: blocks,
+            blockSizes: blockSizes,
+            buttonPositions: buttonPositions,
+            buttonsLocked: buttonsLocked,
+            overlayElements: overlayElements,
+            savedAt: new Date().toISOString()
+          };
+          
+          localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(studioState));
+          console.log('[AutoSave] State saved at', new Date().toLocaleTimeString());
+        } catch (e) {
+          console.warn('[AutoSave] Failed to save state:', e);
+        }
+      }, 5000); // Save every 5 seconds
+      
+      return () => clearInterval(intervalId);
+    }, [blocks, blockSizes, buttonPositions, buttonsLocked, overlayElements]);
+
+    // RESTORE: Load saved studio state from localStorage on mount
+    React.useEffect(() => {
+      try {
+        const saved = localStorage.getItem(AUTO_SAVE_KEY);
+        if (saved) {
+          const state = JSON.parse(saved);
+          if (state && state.blocks && state.blocks.length > 0) {
+            setBlocks(state.blocks);
+            if (state.blockSizes) setBlockSizes(state.blockSizes);
+            if (state.buttonPositions) setButtonPositions(state.buttonPositions);
+            if (state.buttonsLocked !== undefined) setButtonsLocked(state.buttonsLocked);
+            if (state.overlayElements) setOverlayElements(state.overlayElements);
+            console.log('[AutoSave] Restored state from', state.savedAt);
+            setMessage({ text: 'Previous session restored from auto-save!', type: 'success' });
+          }
+        }
+      } catch (e) {
+        console.warn('[AutoSave] Failed to restore state:', e);
+      }
+    }, []);
+    const [overlayElements, setOverlayElements] = useState([]);
+    const overlayIdCounter = useRef(1);
+
+      // Connect to GitHub
+      const connectGitHub = async () => {
+        try {
+          setLoading(true);
+          const OctokitClass = window.Octokit || (await window._waitForOctokit());
+            const kit = new OctokitClass({ auth: config.token });
+          // Verify connection
+          await kit.rest.users.getAuthenticated();
+          setOctokit(kit);
+          setMessage({ text: 'Connected to GitHub!', type: 'success' });
+          // Try to load existing file
+          await fetchFile(kit);
+        } catch (err) {
+          setMessage({ text: 'Connection failed: ' + err.message, type: 'error' });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+
+      // Demo Mode - load default blocks without GitHub
+      const loadDemo = () => {
+        setOctokit({ demo: true });
+        setBlocks([
+          { ...BLOCK_TEMPLATES.hero, uid: Date.now() + '-hero' },
+          { ...BLOCK_TEMPLATES.player, uid: Date.now() + '-player' },
+          { ...BLOCK_TEMPLATES.schedule, uid: Date.now() + '-schedule' },
+          { ...BLOCK_TEMPLATES.about, uid: Date.now() + '-about' }
+        ]);
+        setMessage({ text: 'Demo mode loaded with default templates!', type: 'success' });
+      };
+
+
+      // View generated HTML code
+      const [showCode, setShowCode] = useState(false);
+      const getFullHTML = () => {
+        var h = '<!DOCTYPE html>\n<html lang="en">\n<head>\n';

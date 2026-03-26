@@ -2,4 +2,9 @@
 *.bak3
 *.bak4
 *.bak5
+*.bak6
+*.bak7
+*.bak_octokit
+*.backup2
+*.pre-shuffle-backup
 .DS_Store

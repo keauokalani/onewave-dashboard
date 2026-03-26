@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OneWave Studio – Site Builder</title>
+  <!-- React 18 -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Octokit for GitHub API -->
+  <script type="module">
+    import { Octokit } from "https://esm.sh/@octokit/rest@21.1.1";
+    window.Octokit = Octokit;
+    </script>
+    <script>
+    // Fallback: wait for Octokit to be available
+    window._waitForOctokit = () => new Promise((resolve, reject) => {
+      if (window.Octokit) return resolve(window.Octokit);
+      let tries = 0;
+      const interval = setInterval(() => {
+        if (window.Octokit) { clearInterval(interval); resolve(window.Octokit); }
+        else if (++tries > 50) { clearInterval(interval); reject(new Error('Octokit failed to load')); }
+      }, 100);
+    });
+    </script>
+  <!-- react-beautiful-dnd -->
+  <script src="https://unpkg.com/react-beautiful-dnd@13.1.1/dist/react-beautiful-dnd.min.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #0f0f0f; color: #fff; }
+    .editable:hover { outline: 2px dashed #f472b6; cursor: text; }
+    .block-wrapper:hover { box-shadow: 0 0 0 2px #818cf8; }
+    .drag-handle:hover { color: #f472b6; }
+      .block-wrapper { position: relative; }
+      .resize-handle { position:absolute; bottom:0; right:0; width:20px; height:20px; cursor:nwse-resize; z-index:10; }
+      .resize-handle::after { content:""; position:absolute; bottom:3px; right:3px; width:10px; height:10px; border-right:2px solid #666; border-bottom:2px solid #666; opacity:0.5; }
+      .resize-handle:hover::after { opacity:1; border-color:#f472b6; }
+      .resize-handle-right { position:absolute; top:40px; right:0; bottom:20px; width:6px; cursor:ew-resize; z-index:10; opacity:0; background:#f472b6; border-radius:3px; transition:opacity 0.2s; }
+      .resize-handle-bottom { position:absolute; bottom:0; left:20px; right:20px; height:6px; cursor:ns-resize; z-index:10; opacity:0; background:#f472b6; border-radius:3px; transition:opacity 0.2s; }
+      .block-wrapper:hover .resize-handle-right, .block-wrapper:hover .resize-handle-bottom { opacity:0.4; }
+      .resize-handle-right:hover, .resize-handle-bottom:hover { opacity:0.8; }
+      .block-wrapper.resizing-active { user-select:none; }
+      .block-wrapper { display: flex; flex-direction: column; }
+      .block-wrapper .preview-area { flex: 1; overflow: hidden; }
+      .block-wrapper .preview-area > section { min-height: 100%; background-size: cover; background-position: center; }
+  </style>
+</head>
+<body>
+
+<style id="auth-gate-styles">
+#auth-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0a0a2e 0%,#1a1a4e 50%,#0d0d3d 100%);display:flex;justify-content:center;align-items:center;z-index:999999;font-family:Arial,sans-serif}
+#auth-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:50px 40px;text-align:center;backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(255,255,255,0.5);max-width:420px;width:90%}
+#auth-box h1{color:#fff;font-size:28px;margin:0 0 8px;background:linear-gradient(135deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#auth-box p{color:rgba(255,255,255,0.6);margin:0 0 30px;font-size:14px}
+#auth-box input[type=password]{width:100%;padding:14px 18px;border:1px solid rgba(255,255,255,0.2);border-radius:12px;background:rgba(255,255,255,0.06);color:#fff;font-size:16px;outline:none;box-sizing:border-box;margin-bottom:16px}
+#auth-box input[type=password]:focus{border-color:#00d2ff}
+#auth-box button{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#00d2ff,#7b2ff7);color:#fff;font-size:16px;font-weight:bold;cursor:pointer}
+#auth-box button:hover{opacity:0.9}
+#auth-error{color:#ff6b6b;font-size:13px;margin-top:12px;display:none}
+</style>
+<div id="auth-overlay"><div id="auth-box"><div style="font-size:48px;margin-bottom:16px">&#127754;</div><h1>OneWave Studio</h1><p>Private Dashboard - Authorized Access Only</p><form id="auth-form" onsubmit="return checkAuth()"><input type="password" id="auth-password" placeholder="Enter access password" autofocus autocomplete="off"><button type="submit">Unlock Dashboard</button><div id="auth-error">Incorrect password. Access denied.</div></form></div></div>
+
+<div id="dashboard-content" style="display:none">
+
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { DragDropContext, Droppable, Draggable } = window.ReactBeautifulDnd;
+
+    // ─── BLOCK TEMPLATES ─────────────────────────────────────────────────
+    const BLOCK_TEMPLATES = {
+      hero: {
+        id: 'hero',
+        name: 'Hero Header',
+        icon: 'fa-star',
+        html: `<section class="relative bg-gradient-to-br from-purple-900 via-black to-blue-900 py-24 text-center overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-r from-purple-900 to-blue-900 opacity-50"></div>
+          <div class="relative z-10 max-w-4xl mx-auto px-4">
+            <h1 class="text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-purple-400" data-field="title" editable>One Wave Radio</h1>
+            <p class="text-xl text-gray-300 mb-8" data-field="subtitle" editable>Ride the frequency. Feel the vibe.</p>
+            <div class="flex justify-center gap-4">
+              <a href="#listen" class="bg-pink-600 hover:bg-pink-500 px-8 py-3 rounded-full font-semibold transition" editable>Listen Live</a>
+              <a href="#schedule" class="border border-white/30 hover:border-white px-8 py-3 rounded-full font-semibold transition" editable>View Schedule</a>
+            </div>
+          </div>
+        </section>`
+      },
+      player: {
+        id: 'player',
+        name: 'Audio Player',
+        icon: 'fa-play-circle',
+        html: `<section class="py-20 bg-black text-center relative overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-r from-purple-900 to-blue-900 opacity-50"></div>
+          <div class="relative z-10 max-w-3xl mx-auto px-4">
+            <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-pink-500 animate-pulse flex items-center justify-center">
+              <i class="fas fa-radio text-4xl text-white"></i>
+            </div>
+            <h2 class="text-4xl font-bold mb-2" data-field="title" editable>ON AIR NOW</h2>
+            <p class="text-xl text-gray-300 mb-8" data-field="artist" editable>Live Stream</p>
+            <audio controls class="w-full max-w-md mx-auto" crossorigin="anonymous">
+              <source src="https://your-cloudflare-domain.com/stream.mp3" type="audio/mpeg">
+            </audio>
+          </div>
+        </section>`
+      },
+      schedule: {
+        id: 'schedule',
+        name: 'Schedule Grid',
+        icon: 'fa-calendar',
+        html: `<section class="py-20 bg-gray-950" id="schedule">
+          <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-12" data-field="title" editable>Broadcast Schedule</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+              <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 hover:border-pink-500 transition">
+                <div class="text-pink-400 font-mono text-sm mb-2" editable>12:00 AM – 6:00 AM</div>
+                <h3 class="text-xl font-bold mb-1" editable>Midnight Waves</h3>
+                <p class="text-gray-400" editable>Late-night ambient & chill</p>
+              </div>
+              <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 hover:border-purple-500 transition">
+                <div class="text-purple-400 font-mono text-sm mb-2" editable>6:00 AM – 12:00 PM</div>
+                <h3 class="text-xl font-bold mb-1" editable>Morning Rise</h3>
+                <p class="text-gray-400" editable>Upbeat morning grooves</p>
+              </div>
+              <div class="bg-gray-900 rounded-xl p-6 border border-gray-800 hover:border-blue-500 transition">
+                <div class="text-blue-400 font-mono text-sm mb-2" editable>12:00 PM – 6:00 PM</div>
+                <h3 class="text-xl font-bold mb-1" editable>Day Flow</h3>
+                <p class="text-gray-400" editable>Smooth daytime selections</p>
+              </div>
+            </div>
+          </div>
+        </section>`
+      },
+      about: {
+        id: 'about',
+        name: 'About Text',
+        icon: 'fa-info-circle',
+        html: `<section class="py-20 bg-black">
+          <div class="max-w-3xl mx-auto px-4 text-center">
+            <h2 class="text-4xl font-bold mb-6" data-field="title" editable>About One Wave Radio</h2>
+            <p class="text-gray-300 text-lg leading-relaxed" data-field="description" editable>
+              One Wave Radio is an independent internet radio station bringing you curated music, live DJ sets, and community-driven content 24/7. Ride the wave with us.
+            </p>
+          </div>
+        </section>`
+      }
+    };
+
+    // ─── MAIN APP ──────────────────────────────────────────────────
+    function App() {
+      const [octokit, setOctokit] = useState(null);
+          const [config, setConfig] = useState(() => {
+            try {
+              const saved = localStorage.getItem("ow_studio_config");
+              if (saved) {
+                const decoded = atob(saved);
+                const json = decoded.split("").map((c,i) =>
+                  String.fromCharCode(c.charCodeAt(0) ^ (42 + (i % 17)))
+                ).join("");
+                const p = JSON.parse(json);
+                if (p) return { token: p.token||"", owner: p.owner||"", repo: p.repo||"onewaveradio.com", path: p.path||"index.html" };
+              }
+            } catch(e) {
+              try {
+                const saved = localStorage.getItem("ow_studio_config");
+                if (saved) { const p = JSON.parse(saved); if (p) return { token: p.token||"", owner: p.owner||"", repo: p.repo||"onewaveradio.com", path: p.path||"index.html" }; }
+              } catch(e2) {}
+            }
+            return { token: "", owner: "", repo: "onewaveradio.com", path: "index.html" };
+          });
+      const [blocks, setBlocks] = useState([]);
+      const [blockSizes, setBlockSizes] = useState({});
+      const [buttonPositions, setButtonPositions] = useState({});
+      const [buttonsLocked, setButtonsLocked] = useState(true);
+      const buttonsLockedRef = useRef(true);
+      const [loading, setLoading] = useState(false);
+      const [message, setMessage] = useState({ text: '', type: '' });
+      const previewRef = useRef(null);
+
+          // Encrypt/decrypt helpers for secure token storage
+          const encryptConfig = (data) => {
+            try {
+              const json = JSON.stringify(data);
+              return btoa(json.split('').map((c,i) => 
+                String.fromCharCode(c.charCodeAt(0) ^ (42 + (i % 17)))
+              ).join(''));
+            } catch(e) { return null; }
+          };
+          const decryptConfig = (encrypted) => {
+            try {
+              const decoded = atob(encrypted);
+              const json = decoded.split('').map((c,i) => 
+                String.fromCharCode(c.charCodeAt(0) ^ (42 + (i % 17)))
+              ).join('');
+              return JSON.parse(json);
+            } catch(e) { return null; }

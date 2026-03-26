@@ -1,0 +1,90 @@
+181:>:9:const currentTop = existing ? existing.top : rect.top - parentRect.top;
+182:>:9:
+183:>:9:buttonDragRef.current = {
+184:>:11:active: true,
+185:>:11:blockUid: blockUid,
+186:>:11:btnIndex: btnIndex,
+187:>:11:startX: e.clientX,
+188:>:11:startY: e.clientY,
+189:>:11:origLeft: currentLeft,
+190:>:11:origTop: currentTop,
+191:>:11:el: btnEl,
+192:>:11:parentRect: parentRect,
+193:>:11:moved: false
+194:>:9:};
+195:>:9:btnEl.classList.add('btn-dragging');
+196:>:9:if (!existing) {
+197:>:11:btnEl.style.position = 'absolute';
+198:>:11:btnEl.style.left = currentLeft + 'px';
+199:>:11:btnEl.style.top = currentTop + 'px';
+200:>:9:}
+201:>:9:
+202:>:9:const onMove = (ev) => {
+203:>:11:if (!buttonDragRef.current.active) return;
+204:>:11:const dx = ev.clientX - buttonDragRef.current.startX;
+205:RAW:0:```
+206:EMPTY
+207:RAW:0:## Command 2: diff index.html.bak index.html.bak3 | tail -200
+208:RAW:0:```
+209:>:11:btnEl.style.left = currentLeft + 'px';
+210:>:11:btnEl.style.top = currentTop + 'px';
+211:>:9:}
+212:>:9:
+213:>:9:const onMove = (ev) => {
+214:>:11:if (!buttonDragRef.current.active) return;
+215:>:11:const dx = ev.clientX - buttonDragRef.current.startX;
+216:>:11:const dy = ev.clientY - buttonDragRef.current.startY;
+217:>:11:if (Math.abs(dx) > 2 || Math.abs(dy) > 2) buttonDragRef.current.moved = true;
+218:>:11:const newLeft = buttonDragRef.current.origLeft + dx;
+219:>:11:const newTop = buttonDragRef.current.origTop + dy;
+220:>:11:buttonDragRef.current.el.style.left = newLeft + 'px';
+221:>:11:buttonDragRef.current.el.style.top = newTop + 'px';
+222:>:11:buttonDragRef.current.el.style.position = 'absolute';
+223:>:9:};
+224:>:9:
+225:>:9:const onUp = (ev) => {
+226:>:11:if (!buttonDragRef.current.active) return;
+227:>:11:const dx = ev.clientX - buttonDragRef.current.startX;
+228:>:11:const dy = ev.clientY - buttonDragRef.current.startY;
+229:>:11:const finalLeft = buttonDragRef.current.origLeft + dx;
+230:>:11:const finalTop = buttonDragRef.current.origTop + dy;
+231:>:11:const bUid = buttonDragRef.current.blockUid;
+232:>:11:const bIdx = buttonDragRef.current.btnIndex;
+233:>:11:const pk = bUid + '-' + bIdx;
+234:>:11:const wasMoved = buttonDragRef.current.moved;
+235:>:11:
+236:>:11:buttonDragRef.current.el.classList.remove('btn-dragging');
+237:>:11:buttonDragRef.current.active = false;
+238:>:11:
+239:>:11:if (wasMoved) {
+240:>:13:setButtonPositions(prev => ({
+241:>:15:...prev,
+242:>:15:[pk]: { left: finalLeft, top: finalTop }
+243:>:13:}));
+244:>:11:}
+245:>:11:
+246:>:11:document.removeEventListener('mousemove', onMove);
+247:>:11:document.removeEventListener('mouseup', onUp);
+248:>:9:};
+249:>:9:
+250:>:9:document.addEventListener('mousemove', onMove);
+251:>:9:document.addEventListener('mouseup', onUp);
+252:>:7:};
+253:>:1:
+254:>:7:const applyButtonPositions = (previewEl, blockUid) => {
+255:>:9:buttonsLockedRef.current = buttonsLocked;
+256:>:9:if (!previewEl) return;
+257:>:9:const btns = previewEl.querySelectorAll('a[editable]');
+258:>:9:previewEl.style.position = 'relative';
+259:>:9:btns.forEach((btn, idx) => {
+260:>:11:const posKey = blockUid + '-' + idx;
+261:>:11:const pos = buttonPositions[posKey];
+262:>:11:if (pos) {
+263:>:13:btn.style.position = 'absolute';
+264:>:13:btn.style.left = pos.left + 'px';
+265:>:13:btn.style.top = pos.top + 'px';
+266:>:11:}
+267:>:11:btn.style.cursor = buttonsLockedRef.current ? 'default' : 'grab';
+268:>:11:btn.onmousedown = (e) => {
+269:>:13:if (buttonsLockedRef.current) return;
+270:>:13:if (e.button !== 0) return;

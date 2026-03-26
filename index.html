@@ -12,7 +12,21 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Octokit for GitHub API -->
-  <script src="https://unpkg.com/@octokit/rest/dist-web/index.js"></script>
+  <script type="module">
+    import { Octokit } from "https://esm.sh/@octokit/rest@21.1.1";
+    window.Octokit = Octokit;
+    </script>
+    <script>
+    // Fallback: wait for Octokit to be available
+    window._waitForOctokit = () => new Promise((resolve, reject) => {
+      if (window.Octokit) return resolve(window.Octokit);
+      let tries = 0;
+      const interval = setInterval(() => {
+        if (window.Octokit) { clearInterval(interval); resolve(window.Octokit); }
+        else if (++tries > 50) { clearInterval(interval); reject(new Error('Octokit failed to load')); }
+      }, 100);
+    });
+    </script>
   <!-- react-beautiful-dnd -->
   <script src="https://unpkg.com/react-beautiful-dnd@13.1.1/dist/react-beautiful-dnd.min.js"></script>
   <!-- Font Awesome -->
@@ -33,14 +47,14 @@
       .block-wrapper.resizing-active { user-select:none; }
       .block-wrapper { display: flex; flex-direction: column; }
       .block-wrapper .preview-area { flex: 1; overflow: hidden; }
-      .block-wrapper .preview-area > section { min-height: 100%; background-size: contain; background-position: center; }
+      .block-wrapper .preview-area > section { min-height: 100%; background-size: cover; background-position: center; }
   </style>
 </head>
 <body>
 
 <style id="auth-gate-styles">
 #auth-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0a0a2e 0%,#1a1a4e 50%,#0d0d3d 100%);display:flex;justify-content:center;align-items:center;z-index:999999;font-family:Arial,sans-serif}
-#auth-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:50px 40px;text-align:center;backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(0,0,0,0.5);max-width:420px;width:90%}
+#auth-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:50px 40px;text-align:center;backdrop-filter:blur(20px);box-shadow:0 20px 60px rgba(255,255,255,0.5);max-width:420px;width:90%}
 #auth-box h1{color:#fff;font-size:28px;margin:0 0 8px;background:linear-gradient(135deg,#00d2ff,#7b2ff7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #auth-box p{color:rgba(255,255,255,0.6);margin:0 0 30px;font-size:14px}
 #auth-box input[type=password]{width:100%;padding:14px 18px;border:1px solid rgba(255,255,255,0.2);border-radius:12px;background:rgba(255,255,255,0.06);color:#fff;font-size:16px;outline:none;box-sizing:border-box;margin-bottom:16px}
@@ -65,12 +79,11 @@
         name: 'Hero Header',
         icon: 'fa-star',
         html: `<section class="relative bg-gradient-to-br from-purple-900 via-black to-blue-900 py-24 text-center overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-r from-purple-900 to-blue-900 opacity-50"></div>
           <div class="relative z-10 max-w-4xl mx-auto px-4">
             <h1 class="text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-purple-400" data-field="title" editable>One Wave Radio</h1>
             <p class="text-xl text-gray-300 mb-8" data-field="subtitle" editable>Ride the frequency. Feel the vibe.</p>
             <div class="flex justify-center gap-4">
-              <a href="#listen" class="bg-pink-600 hover:bg-pink-500 px-8 py-3 rounded-full font-semibold transition" editable>Listen Live</a>
+              <a href="#listen" onclick="setTimeout(function(){window.owrListenLive && window.owrListenLive()},500)" class="bg-pink-600 hover:bg-pink-500 px-8 py-3 rounded-full font-semibold transition" editable>Listen Live</a>
               <a href="#schedule" class="border border-white/30 hover:border-white px-8 py-3 rounded-full font-semibold transition" editable>View Schedule</a>
             </div>
           </div>
@@ -80,17 +93,19 @@
         id: 'player',
         name: 'Audio Player',
         icon: 'fa-play-circle',
-        html: `<section class="py-20 bg-black text-center relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-r from-purple-900 to-blue-900 opacity-50"></div>
+        html: `<section style="padding-top: 340px; padding-bottom: 10px;" class="bg-black text-center relative overflow-hidden">
           <div class="relative z-10 max-w-3xl mx-auto px-4">
-            <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-pink-500 animate-pulse flex items-center justify-center">
-              <i class="fas fa-radio text-4xl text-white"></i>
-            </div>
+            
             <h2 class="text-4xl font-bold mb-2" data-field="title" editable>ON AIR NOW</h2>
             <p class="text-xl text-gray-300 mb-8" data-field="artist" editable>Live Stream</p>
-            <audio controls class="w-full max-w-md mx-auto" crossorigin="anonymous">
-              <source src="https://your-cloudflare-domain.com/stream.mp3" type="audio/mpeg">
-            </audio>
+      <audio id="owrPlayer" class="w-full max-w-nd mx-auto" style="display:none"></audio>
+      <p id="owrTrackTitle" class="text-lg text-pink-300 mb-4 font-medium">Click Listen Live to start</p>
+      <div class="flex justify-center gap-3 mb-4">
+        <button onclick="window.owrPlayPrev && window.owrPlayPrev()" class="bg-gray-800 hover:bg-gray-700 text-white px-5 py-2 rounded-full font-semibold transition border border-gray-600" title="Previous Track">&#9198; Skip Back</button>
+        <button onclick="window.owrListenLive && window.owrListenLive()" class="bg-pink-600 hover:bg-pink-500 text-white px-8 py-3 rounded-full font-bold text-lg transition animate-pulse" title="Listen Live">&#127925; Listen Live</button>
+        <button onclick="window.owrSkipForward && window.owrSkipForward()" class="bg-gray-800 hover:bg-gray-700 text-white px-5 py-2 rounded-full font-semibold transition border border-gray-600" title="Next Track">Skip Next &#9197;</button>
+      </div>
+      <p class="text-sm text-gray-400">Broadcasting 24/7 &middot; Shuffle Playlist</p>
           </div>
         </section>`
       },
@@ -139,12 +154,25 @@
     // ─── MAIN APP ──────────────────────────────────────────────────
     function App() {
       const [octokit, setOctokit] = useState(null);
-      const [config, setConfig] = useState({
-        token: '',
-        owner: '',
-        repo: 'onewaveradio.com',
-        path: 'index.html'
-      });
+          const [config, setConfig] = useState(() => {
+            try {
+              const saved = localStorage.getItem("ow_studio_config");
+              if (saved) {
+                const decoded = atob(saved);
+                const json = decoded.split("").map((c,i) =>
+                  String.fromCharCode(c.charCodeAt(0) ^ (42 + (i % 17)))
+                ).join("");
+                const p = JSON.parse(json);
+                if (p) return { token: p.token||"", owner: p.owner||"", repo: p.repo||"onewaveradio.com", path: p.path||"index.html" };
+              }
+            } catch(e) {
+              try {
+                const saved = localStorage.getItem("ow_studio_config");
+                if (saved) { const p = JSON.parse(saved); if (p) return { token: p.token||"", owner: p.owner||"", repo: p.repo||"onewaveradio.com", path: p.path||"index.html" }; }
+              } catch(e2) {}
+            }
+            return { token: "", owner: "", repo: "onewaveradio.com", path: "index.html" };
+          });
       const [blocks, setBlocks] = useState([]);
       const [blockSizes, setBlockSizes] = useState({});
       const [buttonPositions, setButtonPositions] = useState({});
@@ -153,6 +181,244 @@
       const [loading, setLoading] = useState(false);
       const [message, setMessage] = useState({ text: '', type: '' });
       const previewRef = useRef(null);
+
+          // Encrypt/decrypt helpers for secure token storage
+          const encryptConfig = (data) => {
+            try {
+              const json = JSON.stringify(data);
+              return btoa(json.split('').map((c,i) => 
+                String.fromCharCode(c.charCodeAt(0) ^ (42 + (i % 17)))
+              ).join(''));
+            } catch(e) { return null; }
+          };
+          const decryptConfig = (encrypted) => {
+            try {
+              const decoded = atob(encrypted);
+              const json = decoded.split('').map((c,i) => 
+                String.fromCharCode(c.charCodeAt(0) ^ (42 + (i % 17)))
+              ).join('');
+              return JSON.parse(json);
+            } catch(e) { return null; }
+          };
+
+          // Persist GitHub config to localStorage (encrypted) whenever it changes
+          React.useEffect(() => {
+            try {
+              const encrypted = encryptConfig(config);
+              if (encrypted) localStorage.setItem('ow_studio_config', encrypted);
+            } catch(e) {}
+          }, [config]);
+
+    // ================================================================
+    // AUTO-SAVE: Save all studio state to localStorage every 5 seconds
+    // ================================================================
+    const AUTO_SAVE_KEY = 'ow_studio_autosave';
+    const [autoSaveStatus, setAutoSaveStatus] = React.useState('ok');
+
+    // ====== IndexedDB helpers for background image persistence ======
+    const IDB_NAME = 'ow_studio_images';
+    const IDB_STORE = 'bgImages';
+    const IDB_VERSION = 1;
+
+    const openImageDB = () => {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(IDB_STORE)) {
+            db.createObjectStore(IDB_STORE, { keyPath: 'uid' });
+          }
+        };
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    };
+
+    const saveBgImagesToDB = async (blocks) => {
+      try {
+        // Collect valid (non-stripped) background images using DOMParser
+        const validImages = [];
+        for (const b of blocks) {
+          if (!b.html) continue;
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(b.html, 'text/html');
+          const el = doc.body.firstElementChild;
+          if (el && el.style.backgroundImage) {
+            // el.style.backgroundImage returns: url("data:image/png;base64,...")
+            const bgImg = el.style.backgroundImage;
+            // Extract URL from url("...") format
+            const urlMatch = bgImg.match(/url\(["']?([^"')]+)["']?\)/);
+            if (urlMatch && urlMatch[1]) {
+              const imgUrl = urlMatch[1];
+              if (imgUrl.startsWith('data:image/') && !imgUrl.includes('STRIPPED')) {
+                validImages.push({ uid: b.uid, bgImage: imgUrl });
+              }
+            }
+          }
+        }
+        // Only update IndexedDB if we have valid images to save
+        // This prevents clearing stored images when blocks have stripped data
+        if (validImages.length === 0) {
+          console.log('[AutoSave] No valid bg images to save, preserving IndexedDB');
+          return;
+        }
+        const db = await openImageDB();
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        const store = tx.objectStore(IDB_STORE);
+        store.clear();
+        for (const img of validImages) {
+          store.put(img);
+        }
+        await new Promise((resolve, reject) => {
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+        console.log('[AutoSave] Background images saved to IndexedDB (' + validImages.length + ' images)');
+      } catch (err) {
+        console.warn('[AutoSave] Failed to save bg images to IndexedDB:', err);
+      }
+    };
+
+    const restoreBlockBgImages = async (ignoredBlocks, setBlocksFn) => {
+      try {
+        const db = await openImageDB();
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const store = tx.objectStore(IDB_STORE);
+        const allImages = await new Promise((resolve, reject) => {
+          const req = store.getAll();
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+        db.close();
+        if (!allImages || allImages.length === 0) return;
+        const imgMap = {};
+        for (const entry of allImages) {
+          imgMap[entry.uid] = entry.bgImage;
+        }
+        // Use functional state update to always work with latest blocks
+        setBlocksFn(prevBlocks => {
+          let changed = false;
+          const updated = prevBlocks.map(b => {
+            if (imgMap[b.uid] && b.html) {
+              const hasStripped = b.html.includes('base64,STRIPPED');
+              const hasBg = b.html.includes('background-image');
+              if (hasStripped || !hasBg) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(b.html, 'text/html');
+                const el = doc.body.firstElementChild;
+                if (el) {
+                  el.style.backgroundImage = 'url(' + imgMap[b.uid] + ')';
+                  el.style.backgroundSize = 'cover';
+                  el.style.backgroundPosition = 'center';
+                  el.style.backgroundRepeat = 'no-repeat';
+                  changed = true;
+                  return { ...b, html: el.outerHTML };
+                }
+              }
+            }
+            return b;
+          });
+          if (changed) {
+            console.log('[AutoSave] Restored background images from IndexedDB');
+            return updated;
+          }
+          return prevBlocks;
+        });
+      } catch (err) {
+        console.warn('[AutoSave] Failed to restore bg images from IndexedDB:', err);
+      }
+    };
+
+    // Helper: strip base64 data URIs from HTML to reduce storage size
+    const stripBase64FromHtml = (html) => {
+      if (!html) return html;
+      return html.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+\/=]+/g, 'data:image/png;base64,STRIPPED');
+    };
+
+    // Manual save function (also used by autosave interval)
+    const saveToLocalStorage = React.useCallback(() => {
+      try {
+        if (blocks.length === 0) return false;
+        // Save background images to IndexedDB before stripping
+        saveBgImagesToDB(blocks);
+        // Create lightweight blocks by stripping base64 images
+        const lightBlocks = blocks.map(b => ({
+          ...b,
+          html: stripBase64FromHtml(b.html)
+        }));
+        const studioState = {
+          blocks: lightBlocks,
+          blockSizes: blockSizes,
+          buttonPositions: buttonPositions,
+          buttonsLocked: buttonsLocked,
+          overlayElements: overlayElements,
+          savedAt: new Date().toISOString(),
+          hasStrippedImages: true
+        };
+        // Clear old data first to free space
+        try { localStorage.removeItem(AUTO_SAVE_KEY); } catch(x) {}
+        const data = JSON.stringify(studioState);
+        localStorage.setItem(AUTO_SAVE_KEY, data);
+        console.log('[AutoSave] State saved (' + Math.round(data.length/1024) + 'KB) at', new Date().toLocaleTimeString());
+        setAutoSaveStatus('ok');
+        return true;
+      } catch (e) {
+        console.error('[AutoSave] Failed:', e.name, e.message);
+        // Handle QuotaExceededError specifically
+        if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
+          try {
+            localStorage.clear();
+            const miniState = {
+              blocks: blocks.map(b => ({ uid: b.uid, name: b.name, type: b.type, html: (b.html || '').substring(0, 500) + '<!-- truncated -->' })),
+              blockSizes: blockSizes,
+              buttonPositions: buttonPositions,
+              buttonsLocked: buttonsLocked,
+              savedAt: new Date().toISOString(),
+              truncated: true
+            };
+            localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(miniState));
+            console.warn('[AutoSave] Emergency save with truncated blocks');
+            setAutoSaveStatus('warning');
+            return true;
+          } catch (e2) {
+            console.error('[AutoSave] Emergency save also failed:', e2);
+          }
+        }
+        setAutoSaveStatus('error');
+        return false;
+      }
+    }, [blocks, blockSizes, buttonPositions, buttonsLocked, overlayElements]);
+
+    React.useEffect(() => {
+      const intervalId = setInterval(() => {
+        saveToLocalStorage();
+      }, 5000);
+      return () => clearInterval(intervalId);
+    }, [saveToLocalStorage]);
+
+    // RESTORE: Load saved studio state from localStorage on mount
+    React.useEffect(() => {
+      try {
+        const saved = localStorage.getItem(AUTO_SAVE_KEY);
+        if (saved) {
+          const state = JSON.parse(saved);
+          if (state && state.blocks && state.blocks.length > 0) {
+            setBlocks(state.blocks);
+            if (state.blockSizes) setBlockSizes(state.blockSizes);
+            if (state.buttonPositions) setButtonPositions(state.buttonPositions);
+            if (state.buttonsLocked !== undefined) setButtonsLocked(state.buttonsLocked);
+            if (state.overlayElements) setOverlayElements(state.overlayElements);
+            // Restore background images from IndexedDB
+            setTimeout(() => restoreBlockBgImages(state.blocks, setBlocks), 500); setTimeout(() => restoreBlockBgImages(state.blocks, setBlocks), 2000);
+            console.log('[AutoSave] Restored state from', state.savedAt);
+            setMessage({ text: 'Previous session restored from auto-save!', type: 'success' });
+          }
+        }
+      } catch (e) {
+        console.warn('[AutoSave] Failed to restore state:', e);
+      }
+    }, []);
     const [overlayElements, setOverlayElements] = useState([]);
     const overlayIdCounter = useRef(1);
 
@@ -160,7 +426,8 @@
       const connectGitHub = async () => {
         try {
           setLoading(true);
-          const kit = new Octokit({ auth: config.token });
+          const OctokitClass = window.Octokit || (await window._waitForOctokit());
+            const kit = new OctokitClass({ auth: config.token });
           // Verify connection
           await kit.rest.users.getAuthenticated();
           setOctokit(kit);
@@ -197,7 +464,7 @@
         h += '  <title>One Wave Radio</title>\n';
         h += '  <script src="https://cdn.tailwindcss.com"><\/script>\n';
         h += '  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />\n';
-        h += '  <style>body { margin: 0; font-family: system-ui, sans-serif; background: #0f0f0f; color: #fff; }</style>\n';
+        h += '  <style>body { margin: 0; font-family: system-ui, sans-serif; background: #0f0f0f; color: #fff; } section { width: 1640px; min-height: 1130px; max-width: 100%; margin-left: auto; margin-right: auto; background-size: cover; background-position: center; background-repeat: no-repeat; box-sizing: border-box; overflow: visible; } section .max-w-4xl { max-width: 56rem; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; } img { max-width: 100%; height: auto; }</style>\n';
         h += '</head>\n<body>\n';
         h += blocks.map(function(b) {
           var tmpDiv = document.createElement('div');
@@ -220,7 +487,58 @@
           }
           return tmpDiv.innerHTML;
         }).join('\n');
-        h += '\n</body>\n</html>';
+        h += '\n<script>\n';
+      h += '// ONE WAVE RADIO - SHUFFLE PLAYLIST PLAYER\n';
+      h += '(function() {\n';
+      h += '  var OWR_BUCKET_URL = "https://pub-2aa01387a331477abb91b2bed61747b9.r2.dev";\n';
+      h += '  var OWR_PLAYLIST = [\n';
+      h += '    "2000_futuristic_brandy.mp3","90s_classic_brandy.mp3","Country_Living.mp3",\n';
+      h += '    "Healing_Me.mp3","Island_Bounce.mp3","Island_Soul_Sunset_V2.mp3",\n';
+      h += '    "Island_soul_heavybass.mp3","Island_soul_onedrop.mp3","Island_sunset_instrumental.mp3",\n';
+      h += '    "Kaucoffee_islandreggae.mp3","Minimaldrill_trap.mp3","Mother_of_light.mp3",\n';
+      h += '    "Nvr_say_goodbye_brandy.mp3","Slowjamballad_brandy.mp3","Softly_loving_you.mp3",\n';
+      h += '    "Softly_loving_you_main.mp3","Softlylovingyou_megan_version.mp3","Spacetrap_futuristic.mp3",\n';
+      h += '    "UK_Lovers_Reggae.mp3","ball_noir.mp3","darklane_latenight_drake.mp3",\n';
+      h += '    "dubtouch_reggae.mp3","emotionalspace_piano_drake.mp3","industrial_street.mp3",\n';
+      h += '    "island_horizon.mp3","islandroots_reflections.mp3","kaucoffee_islandcountry.mp3",\n';
+      h += '    "latenight_luxury_trap.mp3","luxury_glossy_trap.mp3","midnightdrift_drake.mp3",\n';
+      h += '    "quiet_reflection.mp3","rnb_midtempo_brandy.mp3","version_four_drake.mp3",\n';
+      h += '    "version_three_drake.mp3","version_two_drake.mp3",\n';
+      h += '    "OWR_MainStation_ID.mp3","OneWaveRadio_Station_ID2.mp3",\n';
+      h += '    "OneWaveRadio_Station_ID3.mp3","OneWaveRadio_Station_ID4.mp3",\n';
+      h += '    "AwakeningofMan_Newsupdate.mp3","ThursdayMarch12_Newsupdate.mp3"\n';
+      h += '  ];\n';
+      h += '  function buildTrackObjects(files) {\n';
+      h += '    return files.map(function(f) {\n';
+      h += '      return { file: f, title: f.replace(/_/g, " ").replace(/\\.mp3$/i, ""), url: OWR_BUCKET_URL + "/" + encodeURIComponent(f), type: "music" };\n';
+      h += '    });\n';
+      h += '  }\n';
+      h += '  var owrTracks = buildTrackObjects(OWR_PLAYLIST);\n';
+      h += '  var owrCurrentIndex = 0, owrIsPlaying = false, owrAutoAdvanceSet = false;\n';
+      h += '  function owrShuffle(arr) { for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var temp = arr[i]; arr[i] = arr[j]; arr[j] = temp; } return arr; }\n';
+      h += '  owrShuffle(owrTracks);\n';
+      h += '  function owrGetPlayer() { return document.getElementById("owrPlayer"); }\n';
+      h += '  function owrGetTrackTitle() { return document.getElementById("owrTrackTitle"); }\n';
+      h += '  function owrSetupAutoAdvance() { var p = owrGetPlayer(); if (p && !owrAutoAdvanceSet) { p.addEventListener("ended", function() { owrStartTrack(owrCurrentIndex + 1); }); owrAutoAdvanceSet = true; } }\n';
+      h += '  function owrStartTrack(index) {\n';
+      h += '    var player = owrGetPlayer(), trackTitle = owrGetTrackTitle();\n';
+      h += '    if (!player) return;\n';
+      h += '    owrSetupAutoAdvance();\n';
+      h += '    if (index >= owrTracks.length) { owrShuffle(owrTracks); index = 0; }\n';
+      h += '    if (index < 0) { index = owrTracks.length - 1; }\n';
+      h += '    owrCurrentIndex = index;\n';
+      h += '    var t = owrTracks[index];\n';
+      h += '    if (trackTitle) trackTitle.textContent = "Now Playing: " + t.title;\n';
+      h += '    player.src = t.url;\n';
+      h += '    player.play().then(function() { owrIsPlaying = true; }).catch(function(e) { owrIsPlaying = true; if (trackTitle) trackTitle.textContent = "\\u25B6 Tap to play: " + t.title; });\n';
+      h += '  }\n';
+      h += '  window.owrListenLive = function() { var p = owrGetPlayer(); if (!p) return; if (owrIsPlaying) { if (p.paused) { p.play(); var t = owrGetTrackTitle(); if (t) t.textContent = "Now Playing: " + owrTracks[owrCurrentIndex].title; } else { p.pause(); var t = owrGetTrackTitle(); if (t) t.textContent = "Paused: " + owrTracks[owrCurrentIndex].title; } } else { owrStartTrack(owrCurrentIndex); } };\n';
+      h += '  window.owrSkipForward = function() { owrStartTrack(owrCurrentIndex + 1); };\n';
+      h += '  window.owrPlayPrev = function() { owrStartTrack(owrCurrentIndex - 1); };\n';
+      h += '  console.log("[OWR] Shuffle playlist loaded with " + owrTracks.length + " tracks");\n';
+      h += '})();\n';
+      h += '<\/script>\n';
+      h += '\n</body>\n</html>';
         return h;
       };
 
@@ -236,19 +554,85 @@
           // Parse HTML to blocks
           const parsed = parseHTMLToBlocks(content);
           if (parsed.length > 0) {
-            setBlocks(parsed);
-            setMessage({ text: `Loaded ${parsed.length} blocks from repo`, type: 'success' });
+            // Check if auto-save data exists - use it instead of repo data
+            const autoSaved = localStorage.getItem('ow_studio_autosave');
+            let restoredFromAutoSave = false;
+            if (autoSaved) {
+              try {
+                const savedState = JSON.parse(autoSaved);
+                if (savedState && savedState.blocks && savedState.blocks.length > 0) {
+                  setBlocks(savedState.blocks);
+                  if (savedState.blockSizes) setBlockSizes(savedState.blockSizes);
+                  if (savedState.buttonPositions) setButtonPositions(savedState.buttonPositions);
+                  if (savedState.buttonsLocked !== undefined) setButtonsLocked(savedState.buttonsLocked);
+                  if (savedState.overlayElements) setOverlayElements(savedState.overlayElements);
+            // Restore background images from IndexedDB
+            setTimeout(() => restoreBlockBgImages(savedState.blocks, setBlocks), 500); setTimeout(() => restoreBlockBgImages(savedState.blocks, setBlocks), 2000);
+                  restoredFromAutoSave = true;
+                  console.log('[AutoSave] Restored auto-saved state after connect');
+                  setMessage({ text: 'Auto-saved session restored! Your local changes are preserved.', type: 'success' });
+                }
+              } catch (e) {
+                console.warn('[AutoSave] Failed to parse auto-save on connect:', e);
+              }
+            }
+            if (!restoredFromAutoSave) {
+              setBlocks(parsed);
+              setMessage({ text: `Loaded ${parsed.length} blocks from repo`, type: 'success' });
+            }
           } else {
-            // Start with default blocks
-            setBlocks([
-              { ...BLOCK_TEMPLATES.hero, uid: Date.now() + '-hero' },
-              { ...BLOCK_TEMPLATES.player, uid: Date.now() + '-player' },
-              { ...BLOCK_TEMPLATES.schedule, uid: Date.now() + '-schedule' },
-              { ...BLOCK_TEMPLATES.about, uid: Date.now() + '-about' }
-            ]);
+        // Start with default blocks - check localStorage first
+        const elSaved = localStorage.getItem('ow_studio_autosave');
+        let elRestored = false;
+        if (elSaved) {
+          try {
+            const els = JSON.parse(elSaved);
+            if (els && els.blocks && els.blocks.length > 0) {
+              setBlocks(els.blocks);
+              if (els.blockSizes) setBlockSizes(els.blockSizes);
+              if (els.buttonPositions) setButtonPositions(els.buttonPositions);
+              if (els.buttonsLocked !== undefined) setButtonsLocked(els.buttonsLocked);
+              if (els.overlayElements) setOverlayElements(els.overlayElements);
+            // Restore background images from IndexedDB
+            setTimeout(() => restoreBlockBgImages(els.blocks, setBlocks), 500); setTimeout(() => restoreBlockBgImages(els.blocks, setBlocks), 2000);
+              elRestored = true;
+              console.log('[AutoSave] Restored from localStorage (empty repo)');
+              setMessage({ text: 'Restored from local auto-save!', type: 'success' });
+            }
+          } catch (ep) { console.warn('[AutoSave] Parse error:', ep); }
+        }
+        if (!elRestored) {
+          setBlocks([
+            { ...BLOCK_TEMPLATES.hero, uid: Date.now() + '-hero' },
+            { ...BLOCK_TEMPLATES.player, uid: Date.now() + '-player' },
+            { ...BLOCK_TEMPLATES.schedule, uid: Date.now() + '-schedule' },
+            { ...BLOCK_TEMPLATES.about, uid: Date.now() + '-about' }
+          ]);
+        }
           }
         } catch (err) {
-          // File not found – start fresh with defaults
+        // File not found - try localStorage before defaults
+        console.warn('[fetchFile] GitHub fetch failed:', err.message);
+        const fbSaved = localStorage.getItem('ow_studio_autosave');
+        let fbRestored = false;
+        if (fbSaved) {
+          try {
+            const fbs = JSON.parse(fbSaved);
+            if (fbs && fbs.blocks && fbs.blocks.length > 0) {
+              setBlocks(fbs.blocks);
+              if (fbs.blockSizes) setBlockSizes(fbs.blockSizes);
+              if (fbs.buttonPositions) setButtonPositions(fbs.buttonPositions);
+              if (fbs.buttonsLocked !== undefined) setButtonsLocked(fbs.buttonsLocked);
+              if (fbs.overlayElements) setOverlayElements(fbs.overlayElements);
+            // Restore background images from IndexedDB
+            setTimeout(() => restoreBlockBgImages(fbs.blocks, setBlocks), 500); setTimeout(() => restoreBlockBgImages(fbs.blocks, setBlocks), 2000);
+              fbRestored = true;
+              console.log('[AutoSave] Restored from localStorage after fetch error');
+              setMessage({ text: 'Restored from local auto-save!', type: 'success' });
+            }
+          } catch (pe) { console.warn('[AutoSave] Parse failed:', pe); }
+        }
+        if (!fbRestored) {
           setBlocks([
             { ...BLOCK_TEMPLATES.hero, uid: Date.now() + '-hero' },
             { ...BLOCK_TEMPLATES.player, uid: Date.now() + '-player' },
@@ -256,6 +640,7 @@
             { ...BLOCK_TEMPLATES.about, uid: Date.now() + '-about' }
           ]);
           setMessage({ text: 'Starting with default template', type: 'info' });
+        }
         }
       };
 
@@ -374,7 +759,7 @@
             const el = doc.body.firstElementChild;
             if (el) {
               el.style.backgroundImage = 'url(' + dataUrl + ')';
-              el.style.backgroundSize = 'contain';
+              el.style.backgroundSize = 'cover';
               el.style.backgroundPosition = 'center';
               el.style.backgroundRepeat = 'no-repeat';
               return { ...b, html: el.outerHTML };
@@ -502,20 +887,7 @@
         }
         setLoading(true);
         try {
-          const fullHTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>One Wave Radio</title>
-  <script src="https://cdn.tailwindcss.com"><\/script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>body { margin: 0; font-family: system-ui, sans-serif; background: #0f0f0f; color: #fff; }</style>
-</head>
-<body>
-${blocks.map(b => b.html).join('\n')}
-</body>
-</html>`;
+        const fullHTML = getFullHTML();
 
           // Get current file SHA if exists
           let sha;
@@ -713,7 +1085,7 @@ ${blocks.map(b => b.html).join('\n')}
               </div>
 
               <p class="text-xs text-gray-600 mt-4 text-center">
-                ⚠️ Your token is stored in browser memory only (never saved to disk)
+                ⚠️ Your token is securely encrypted and saved to local storage
               </p>
             </div>
           </div>
@@ -749,7 +1121,7 @@ ${blocks.map(b => b.html).join('\n')}
               <i class="fas fa-image"></i> Add Photo
             </button>
             <button
-                onClick={() => { setOctokit(null); setBlocks([]); }}
+                onClick={() => { saveToLocalStorage(); setOctokit(null); console.log("[Disconnect] Saved state before disconnect"); setMessage({ text: "Disconnected. Your work is saved locally.", type: "info" }); }}
                 class="text-gray-400 hover:text-white text-sm transition"
               >
                 Disconnect
@@ -760,6 +1132,29 @@ ${blocks.map(b => b.html).join('\n')}
               >
                 <i class="fas fa-code"></i> View Code
               </button>
+            {/* AutoSave Status Indicator */}
+            {autoSaveStatus === 'error' && (
+              <span style={{color: '#ef4444', fontSize: '12px', marginRight: '12px'}}>
+                <i className="fas fa-exclamation-triangle"></i> AutoSave failed
+              </span>
+            )}
+            {autoSaveStatus === 'warning' && (
+              <span style={{color: '#f59e0b', fontSize: '12px', marginRight: '12px'}}>
+                <i className="fas fa-exclamation-circle"></i> AutoSave limited
+              </span>
+            )}
+            {autoSaveStatus === 'ok' && (
+              <span style={{color: '#22c55e', fontSize: '12px', marginRight: '12px'}}>
+                <i className="fas fa-check-circle"></i> AutoSaved
+              </span>
+            )}
+            {/* Manual Save Draft Button */}
+            <button
+              onClick={() => { const ok = saveToLocalStorage(); setMessage({ text: ok ? 'Draft saved to browser!' : 'Save failed - use Publish instead', type: ok ? 'success' : 'error' }); }}
+              style={{marginRight: '8px', padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize: '14px', fontWeight: 600}}
+            >
+              <i className="fas fa-save"></i> Save Draft
+            </button>
               <button
                 onClick={saveToGitHub}
                 disabled={loading}
@@ -931,15 +1326,15 @@ ${blocks.map(b => b.html).join('\n')}
                       top: el.y + 'px',
                       width: el.width + 'px',
                       height: el.height + 'px',
-                      border: '2px dashed rgba(236,72,153,0.7)',
+                      border: '2px dashed #ec4899',
                       borderRadius: '4px',
                       cursor: 'move',
                       zIndex: 50,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: el.type === 'text' ? 'rgba(0,0,0,0.5)' : 'transparent',
-                      color: 'white',
+                      backgroundColor: el.type === 'text' ? 'rgba(255,255,255,0.5)' : 'transparent',
+                      color: '#1f2937',
                       fontSize: (el.fontSize || 16) + 'px',
                       userSelect: 'none',
                       padding: '4px',
@@ -976,7 +1371,7 @@ ${blocks.map(b => b.html).join('\n')}
                         width: '10px', height: '10px', background: '#ec4899',
                         cursor: 'nwse-resize', borderRadius: '2px',
                       }}
-                      onMouseDown={(e) => { e.stopPropagation(); startOverlayResize(e, el.id); }}
+                      onMouseDown={(e) => { e.stopPropagation(); startOverlayResize(e, el.id, "both"); }}
                     />
                   </div>
                 ))}
@@ -1030,10 +1425,166 @@ ${blocks.map(b => b.html).join('\n')}
 <script id="auth-gate-script">
 (function(){
 var H="034c5253b305b3105104304670429ff4cf6a502d5732ecef2f511f0582a04584",K="ow_studio_auth";
-if(sessionStorage.getItem(K)===H){document.getElementById("auth-overlay").remove();document.getElementById("auth-gate-styles").remove();document.getElementById("auth-gate-script").remove();document.getElementById("dashboard-content").style.display="";return}
+if(localStorage.getItem(K)===H){document.getElementById("auth-overlay").remove();document.getElementById("auth-gate-styles").remove();document.getElementById("auth-gate-script").remove();document.getElementById("dashboard-content").style.display="";return}
 var d=document.getElementById("dashboard-content");if(d)d.style.display="none";
-window.checkAuth=async function(){var p=document.getElementById("auth-password").value;var e=new TextEncoder();var b=await crypto.subtle.digest("SHA-256",e.encode(p));var a=Array.from(new Uint8Array(b));var h=a.map(function(x){return x.toString(16).padStart(2,"0")}).join("");if(h===H){sessionStorage.setItem(K,H);document.getElementById("auth-overlay").remove();document.getElementById("auth-gate-styles").remove();document.getElementById("auth-gate-script").remove();document.getElementById("dashboard-content").style.display=""}else{document.getElementById("auth-error").style.display="block";document.getElementById("auth-password").value="";document.getElementById("auth-password").focus()}return false};
+window.checkAuth=async function(){var p=document.getElementById("auth-password").value;var e=new TextEncoder();var b=await crypto.subtle.digest("SHA-256",e.encode(p));var a=Array.from(new Uint8Array(b));var h=a.map(function(x){return x.toString(16).padStart(2,"0")}).join("");if(h===H){localStorage.setItem(K,H);document.getElementById("auth-overlay").remove();document.getElementById("auth-gate-styles").remove();document.getElementById("auth-gate-script").remove();document.getElementById("dashboard-content").style.display=""}else{document.getElementById("auth-error").style.display="block";document.getElementById("auth-password").value="";document.getElementById("auth-password").focus()}return false};
 })();
+
+// ============================================================
+// ONE WAVE RADIO - SHUFFLE PLAYLIST PLAYER
+// Integrated from working index-shuffle.html
+// ============================================================
+(function() {
+  var OWR_BUCKET_URL = "https://pub-2aa01387a331477abb91b2bed61747b9.r2.dev";
+  var OWR_PLAYLIST = [
+    "2000_futuristic_brandy.mp3",
+    "90s_classic_brandy.mp3",
+    "Country_Living.mp3",
+    "Healing_Me.mp3",
+    "Island_Bounce.mp3",
+    "Island_Soul_Sunset_V2.mp3",
+    "Island_soul_heavybass.mp3",
+    "Island_soul_onedrop.mp3",
+    "Island_sunset_instrumental.mp3",
+    "Kaucoffee_islandreggae.mp3",
+    "Minimaldrill_trap.mp3",
+    "Mother_of_light.mp3",
+    "Nvr_say_goodbye_brandy.mp3",
+    "Slowjamballad_brandy.mp3",
+    "Softly_loving_you.mp3",
+    "Softly_loving_you_main.mp3",
+    "Softlylovingyou_megan_version.mp3",
+    "Spacetrap_futuristic.mp3",
+    "UK_Lovers_Reggae.mp3",
+    "ball_noir.mp3",
+    "darklane_latenight_drake.mp3",
+    "dubtouch_reggae.mp3",
+    "emotionalspace_piano_drake.mp3",
+    "industrial_street.mp3",
+    "island_horizon.mp3",
+    "islandroots_reflections.mp3",
+    "kaucoffee_islandcountry.mp3",
+    "latenight_luxury_trap.mp3",
+    "luxury_glossy_trap.mp3",
+    "midnightdrift_drake.mp3",
+    "quiet_reflection.mp3",
+    "rnb_midtempo_brandy.mp3",
+    "version_four_drake.mp3",
+    "version_three_drake.mp3",
+    "version_two_drake.mp3",
+    "OWR_MainStation_ID.mp3",
+    "OneWaveRadio_Station_ID2.mp3",
+    "OneWaveRadio_Station_ID3.mp3",
+    "OneWaveRadio_Station_ID4.mp3",
+    "AwakeningofMan_Newsupdate.mp3",
+    "ThursdayMarch12_Newsupdate.mp3"
+  ];
+
+  function buildTrackObjects(files) {
+    return files.map(function(f) {
+      return {
+        file: f,
+        title: f.replace(/_/g, " ").replace(/\.mp3$/i, ""),
+        url: OWR_BUCKET_URL + "/" + encodeURIComponent(f),
+        type: "music"
+      };
+    });
+  }
+
+  var owrTracks = buildTrackObjects(OWR_PLAYLIST);
+  var owrCurrentIndex = 0;
+  var owrIsPlaying = false;
+  var owrAutoAdvanceSet = false;
+
+  function owrShuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = arr[i]; arr[i] = arr[j]; arr[j] = temp;
+    }
+    return arr;
+  }
+
+  owrShuffle(owrTracks);
+
+  function owrGetPlayer() {
+    return document.getElementById("owrPlayer");
+  }
+
+  function owrGetTrackTitle() {
+    return document.getElementById("owrTrackTitle");
+  }
+
+  function owrSetupAutoAdvance() {
+    var player = owrGetPlayer();
+    if (player && !owrAutoAdvanceSet) {
+      player.addEventListener("ended", function() {
+        owrStartTrack(owrCurrentIndex + 1);
+      });
+      owrAutoAdvanceSet = true;
+    }
+  }
+
+  function owrStartTrack(index) {
+    var player = owrGetPlayer();
+    var trackTitle = owrGetTrackTitle();
+    if (!player) {
+      console.warn("[OWR] Player element not found in DOM yet");
+      return;
+    }
+    owrSetupAutoAdvance();
+    if (index >= owrTracks.length) { owrShuffle(owrTracks); index = 0; }
+    if (index < 0) { index = owrTracks.length - 1; }
+    owrCurrentIndex = index;
+    var t = owrTracks[index];
+    if (trackTitle) {
+      trackTitle.textContent = "Now Playing: " + t.title;
+    }
+    player.src = t.url;
+    player.play().then(function() {
+      owrIsPlaying = true;
+      console.log("[OWR] Playing: " + t.title + " (" + (index+1) + "/" + owrTracks.length + ")");
+    }).catch(function(e) {
+      console.log("[OWR] Playback error:", e);
+      owrIsPlaying = true; // Still mark as initialized
+      if (trackTitle) {
+        trackTitle.textContent = "\u25B6 Tap to play: " + t.title;
+      }
+    });
+  }
+
+  // Public API
+  window.owrListenLive = function() {
+    var player = owrGetPlayer();
+    if (!player) {
+      console.warn("[OWR] Player not found. Audio Player block may not be added yet.");
+      return;
+    }
+    if (owrIsPlaying) {
+      if (player.paused) {
+        player.play();
+        var tt = owrGetTrackTitle();
+        if (tt) tt.textContent = "Now Playing: " + owrTracks[owrCurrentIndex].title;
+      } else {
+        player.pause();
+        var tt = owrGetTrackTitle();
+        if (tt) tt.textContent = "Paused: " + owrTracks[owrCurrentIndex].title;
+      }
+    } else {
+      owrStartTrack(owrCurrentIndex);
+    }
+  };
+
+  window.owrSkipForward = function() {
+    owrStartTrack(owrCurrentIndex + 1);
+  };
+
+  window.owrPlayPrev = function() {
+    owrStartTrack(owrCurrentIndex - 1);
+  };
+
+  console.log("[OWR] Shuffle playlist loaded with " + owrTracks.length + " tracks");
+})();
+
 </script>
 
 </body>

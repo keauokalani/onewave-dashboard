@@ -1,0 +1,30 @@
+61|>                                     onClick={() => moveBlock(index, 'down')}
+62|>                                     class="text-gray-600 hover:text-blue-400 transition px-1"
+63|>                                     title="Move down"
+64|>                                     disabled={index === blocks.length - 1}
+65|>                                   >
+66|>                                     <i class="fas fa-chevron-down text-xs"></i>
+67|>                                   </button>
+68|>                     <button
+69|>                         onClick={() => handleBgUpload(block.uid)}
+70|>                         class="text-gray-600 hover:text-purple-400 transition px-2 py-1"
+71|>                         title="Set background image"
+72|>                     >
+73|>                         <i class="fas fa-image"></i>
+74|>                     </button>
+75|>                                   <button
+76|>                                     onClick={() => deleteBlock(block.uid)}
+77|>                                     class="text-gray-600 hover:text-red-400 transition px-2 py-1"
+78|>                                     title="Delete block"
+79|>                                   >
+80|>                                     <i class="fas fa-trash-alt"></i>
+81|>                                   </button>
+82|>                                 </div>
+83|449c748
+84|<                                 ref={previewRef}
+85|---
+86|>                                 ref={(el) => { if (el) applyButtonPositions(el, block.uid); }}
+87|454a754
+88|>                       if (el.tagName === "A") return;
+89|469a770,785
+90|>                     {/* Resize Handles */}

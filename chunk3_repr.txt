@@ -1,0 +1,90 @@
+181: '>         const currentTop = existing ? existing.top : rect.top - parentRect.top;\n'
+182: '>         \n'
+183: '>         buttonDragRef.current = {\n'
+184: '>           active: true,\n'
+185: '>           blockUid: blockUid,\n'
+186: '>           btnIndex: btnIndex,\n'
+187: '>           startX: e.clientX,\n'
+188: '>           startY: e.clientY,\n'
+189: '>           origLeft: currentLeft,\n'
+190: '>           origTop: currentTop,\n'
+191: '>           el: btnEl,\n'
+192: '>           parentRect: parentRect,\n'
+193: '>           moved: false\n'
+194: '>         };\n'
+195: ">         btnEl.classList.add('btn-dragging');\n"
+196: '>         if (!existing) {\n'
+197: ">           btnEl.style.position = 'absolute';\n"
+198: ">           btnEl.style.left = currentLeft + 'px';\n"
+199: ">           btnEl.style.top = currentTop + 'px';\n"
+200: '>         }\n'
+201: '>         \n'
+202: '>         const onMove = (ev) => {\n'
+203: '>           if (!buttonDragRef.current.active) return;\n'
+204: '>           const dx = ev.clientX - buttonDragRef.current.startX;\n'
+205: '```\n'
+206: '\n'
+207: '## Command 2: diff index.html.bak index.html.bak3 | tail -200\n'
+208: '```\n'
+209: ">           btnEl.style.left = currentLeft + 'px';\n"
+210: ">           btnEl.style.top = currentTop + 'px';\n"
+211: '>         }\n'
+212: '>         \n'
+213: '>         const onMove = (ev) => {\n'
+214: '>           if (!buttonDragRef.current.active) return;\n'
+215: '>           const dx = ev.clientX - buttonDragRef.current.startX;\n'
+216: '>           const dy = ev.clientY - buttonDragRef.current.startY;\n'
+217: '>           if (Math.abs(dx) > 2 || Math.abs(dy) > 2) buttonDragRef.current.moved = true;\n'
+218: '>           const newLeft = buttonDragRef.current.origLeft + dx;\n'
+219: '>           const newTop = buttonDragRef.current.origTop + dy;\n'
+220: ">           buttonDragRef.current.el.style.left = newLeft + 'px';\n"
+221: ">           buttonDragRef.current.el.style.top = newTop + 'px';\n"
+222: ">           buttonDragRef.current.el.style.position = 'absolute';\n"
+223: '>         };\n'
+224: '>         \n'
+225: '>         const onUp = (ev) => {\n'
+226: '>           if (!buttonDragRef.current.active) return;\n'
+227: '>           const dx = ev.clientX - buttonDragRef.current.startX;\n'
+228: '>           const dy = ev.clientY - buttonDragRef.current.startY;\n'
+229: '>           const finalLeft = buttonDragRef.current.origLeft + dx;\n'
+230: '>           const finalTop = buttonDragRef.current.origTop + dy;\n'
+231: '>           const bUid = buttonDragRef.current.blockUid;\n'
+232: '>           const bIdx = buttonDragRef.current.btnIndex;\n'
+233: ">           const pk = bUid + '-' + bIdx;\n"
+234: '>           const wasMoved = buttonDragRef.current.moved;\n'
+235: '>           \n'
+236: ">           buttonDragRef.current.el.classList.remove('btn-dragging');\n"
+237: '>           buttonDragRef.current.active = false;\n'
+238: '>           \n'
+239: '>           if (wasMoved) {\n'
+240: '>             setButtonPositions(prev => ({\n'
+241: '>               ...prev,\n'
+242: '>               [pk]: { left: finalLeft, top: finalTop }\n'
+243: '>             }));\n'
+244: '>           }\n'
+245: '>           \n'
+246: ">           document.removeEventListener('mousemove', onMove);\n"
+247: ">           document.removeEventListener('mouseup', onUp);\n"
+248: '>         };\n'
+249: '>         \n'
+250: ">         document.addEventListener('mousemove', onMove);\n"
+251: ">         document.addEventListener('mouseup', onUp);\n"
+252: '>       };\n'
+253: '> \n'
+254: '>       const applyButtonPositions = (previewEl, blockUid) => {\n'
+255: '>         buttonsLockedRef.current = buttonsLocked;\n'
+256: '>         if (!previewEl) return;\n'
+257: ">         const btns = previewEl.querySelectorAll('a[editable]');\n"
+258: ">         previewEl.style.position = 'relative';\n"
+259: '>         btns.forEach((btn, idx) => {\n'
+260: ">           const posKey = blockUid + '-' + idx;\n"
+261: '>           const pos = buttonPositions[posKey];\n'
+262: '>           if (pos) {\n'
+263: ">             btn.style.position = 'absolute';\n"
+264: ">             btn.style.left = pos.left + 'px';\n"
+265: ">             btn.style.top = pos.top + 'px';\n"
+266: '>           }\n'
+267: ">           btn.style.cursor = buttonsLockedRef.current ? 'default' : 'grab';\n"
+268: '>           btn.onmousedown = (e) => {\n'
+269: '>             if (buttonsLockedRef.current) return;\n'
+270: '>             if (e.button !== 0) return;\n'

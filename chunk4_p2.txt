@@ -1,0 +1,30 @@
+31|358a625
+32|>                 <button onClick={() => setButtonsLocked(prev => !prev)} title={buttonsLocked ? "Unlock buttons for repositioning" : "Lock buttons in place"} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', color: buttonsLocked ? '#f87171' : '#4ade80', cursor: 'pointer', padding: '4px 10px', marginRight: '12px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}><i className={buttonsLocked ? "fas fa-lock" : "fas fa-lock-open"}></i>{buttonsLocked ? "Locked" : "Unlocked"}</button>
+33|365a633,638
+34|>                 onClick={() => setShowCode(!showCode)}
+35|>                 class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-semibold text-sm transition flex items-center gap-2"
+36|>               >
+37|>                 <i class="fas fa-code"></i> View Code
+38|>               </button>
+39|>               <button
+40|428a702
+41|>                       style={blockSizes[block.uid] ? { width: blockSizes[block.uid].width + 'px', height: blockSizes[block.uid].height + 'px', overflow: 'hidden' } : {}}
+42|439,445c713,744
+43|<                                 <button
+44|<                                   onClick={() => deleteBlock(block.uid)}
+45|<                                   class="text-gray-600 hover:text-red-400 transition"
+46|<                                   title="Delete block"
+47|<                                 >
+48|<                                   <i class="fas fa-trash-alt"></i>
+49|<                                 </button>
+50|---
+51|>                                 <div class="flex items-center gap-1">
+52|>                                   <button
+53|>                                     onClick={() => moveBlock(index, 'up')}
+54|>                                     class="text-gray-600 hover:text-blue-400 transition px-1"
+55|>                                     title="Move up"
+56|>                                     disabled={index === 0}
+57|>                                   >
+58|>                                     <i class="fas fa-chevron-up text-xs"></i>
+59|>                                   </button>
+60|>                                   <button

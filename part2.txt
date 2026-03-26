@@ -1,0 +1,400 @@
+        }));
+      };
+
+      // Add a new block
+      const addBlock = (templateId) => {
+        const template = BLOCK_TEMPLATES[templateId];
+        setBlocks(prev => [...prev, {
+          ...template,
+          uid: Date.now() + '-' + templateId
+        }]);
+      };
+
+  
+      // Resize handler functions
+      const resizingRef = useRef(null);
+      const buttonDragRef = useRef({ active: false, blockUid: null, btnIndex: null, startX: 0, startY: 0, origLeft: 0, origTop: 0, el: null });
+
+      const startResize = (e, blockUid, direction) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const blockEl = e.target.closest('.block-wrapper');
+        if (!blockEl) return;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startWidth = blockEl.offsetWidth;
+        const startHeight = blockEl.offsetHeight;
+        blockEl.classList.add('resizing-active');
+
+        resizingRef.current = { blockUid, direction, startX, startY, startWidth, startHeight, blockEl };
+
+        const onMouseMove = (ev) => {
+          if (!resizingRef.current) return;
+          const ref = resizingRef.current;
+          let newWidth = ref.startWidth;
+          let newHeight = ref.startHeight;
+
+          if (ref.direction === 'both' || ref.direction === 'right') {
+            newWidth = Math.max(200, ref.startWidth + (ev.clientX - ref.startX));
+          }
+          if (ref.direction === 'both' || ref.direction === 'bottom') {
+            newHeight = Math.max(80, ref.startHeight + (ev.clientY - ref.startY));
+          }
+
+          setBlockSizes(prev => ({
+            ...prev,
+            [ref.blockUid]: {
+              ...(prev[ref.blockUid] || {}),
+              width: newWidth,
+              height: newHeight
+            }
+          }));
+        };
+
+        const onMouseUp = () => {
+          if (resizingRef.current && resizingRef.current.blockEl) {
+            resizingRef.current.blockEl.classList.remove('resizing-active');
+          }
+          resizingRef.current = null;
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      };
+
+    // Drag end handler
+      const onDragEnd = (result) => {
+        if (!result.destination) return;
+        const items = Array.from(blocks);
+        const [reordered] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reordered);
+        setBlocks(items);
+      };
+
+      // Update block HTML
+      const updateBlock = (uid, newHtml) => {
+        setBlocks(prev => prev.map(b =>
+          b.uid === uid ? { ...b, html: newHtml } : b
+        ));
+      };
+
+      // Delete block
+      const deleteBlock = (uid) => {
+        setBlocks(prev => prev.filter(b => b.uid !== uid));
+      };
+
+    const handleBgUpload = (uid) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target.result;
+          setBlocks(prev => prev.map(b => {
+            if (b.uid !== uid) return b;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(b.html, 'text/html');
+            const el = doc.body.firstElementChild;
+            if (el) {
+              el.style.backgroundImage = 'url(' + dataUrl + ')';
+              el.style.backgroundSize = 'cover';
+              el.style.backgroundPosition = 'center';
+              el.style.backgroundRepeat = 'no-repeat';
+              return { ...b, html: el.outerHTML };
+            }
+            return b;
+          }));
+          setMessage({ text: 'Background image applied!', type: 'success' });
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    };
+
+
+
+
+      // ---- Button Drag Handler Functions ----
+      const startButtonDrag = (e, blockUid, btnIndex, btnEl) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const parentRect = btnEl.closest('.preview-area').getBoundingClientRect();
+        const rect = btnEl.getBoundingClientRect();
+        const posKey = blockUid + '-' + btnIndex;
+        const existing = buttonPositions[posKey];
+        const currentLeft = existing ? existing.left : rect.left - parentRect.left;
+        const currentTop = existing ? existing.top : rect.top - parentRect.top;
+        
+        buttonDragRef.current = {
+          active: true,
+          blockUid: blockUid,
+          btnIndex: btnIndex,
+          startX: e.clientX,
+          startY: e.clientY,
+          origLeft: currentLeft,
+          origTop: currentTop,
+          el: btnEl,
+          parentRect: parentRect,
+          moved: false
+        };
+        btnEl.classList.add('btn-dragging');
+        if (!existing) {
+          btnEl.style.position = 'absolute';
+          btnEl.style.left = currentLeft + 'px';
+          btnEl.style.top = currentTop + 'px';
+        }
+        
+        const onMove = (ev) => {
+          if (!buttonDragRef.current.active) return;
+          const dx = ev.clientX - buttonDragRef.current.startX;
+          const dy = ev.clientY - buttonDragRef.current.startY;
+          if (Math.abs(dx) > 2 || Math.abs(dy) > 2) buttonDragRef.current.moved = true;
+          const newLeft = buttonDragRef.current.origLeft + dx;
+          const newTop = buttonDragRef.current.origTop + dy;
+          buttonDragRef.current.el.style.left = newLeft + 'px';
+          buttonDragRef.current.el.style.top = newTop + 'px';
+          buttonDragRef.current.el.style.position = 'absolute';
+        };
+        
+        const onUp = (ev) => {
+          if (!buttonDragRef.current.active) return;
+          const dx = ev.clientX - buttonDragRef.current.startX;
+          const dy = ev.clientY - buttonDragRef.current.startY;
+          const finalLeft = buttonDragRef.current.origLeft + dx;
+          const finalTop = buttonDragRef.current.origTop + dy;
+          const bUid = buttonDragRef.current.blockUid;
+          const bIdx = buttonDragRef.current.btnIndex;
+          const pk = bUid + '-' + bIdx;
+          const wasMoved = buttonDragRef.current.moved;
+          
+          buttonDragRef.current.el.classList.remove('btn-dragging');
+          buttonDragRef.current.active = false;
+          
+          if (wasMoved) {
+            setButtonPositions(prev => ({
+              ...prev,
+              [pk]: { left: finalLeft, top: finalTop }
+            }));
+          }
+          
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      };
+
+      const applyButtonPositions = (previewEl, blockUid) => {
+        buttonsLockedRef.current = buttonsLocked;
+        if (!previewEl) return;
+        const btns = previewEl.querySelectorAll('[editable]');
+        previewEl.style.position = 'relative';
+        btns.forEach((btn, idx) => {
+          const posKey = blockUid + '-' + idx;
+          const pos = buttonPositions[posKey];
+          if (pos) {
+            btn.style.position = 'absolute';
+            btn.style.left = pos.left + 'px';
+            btn.style.top = pos.top + 'px';
+          }
+          btn.style.cursor = buttonsLockedRef.current ? 'default' : 'grab';
+          btn.onmousedown = (e) => {
+            if (buttonsLockedRef.current) return;
+            if (e.button !== 0) return;
+            startButtonDrag(e, blockUid, idx, btn);
+          };
+        });
+      };
+
+      // Move block up or down
+      const moveBlock = (index, direction) => {
+        const newBlocks = [...blocks];
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= newBlocks.length) return;
+        [newBlocks[index], newBlocks[targetIndex]] = [newBlocks[targetIndex], newBlocks[index]];
+        setBlocks(newBlocks);
+      };
+
+            // Save to GitHub
+      const saveToGitHub = async () => {
+        if (!octokit || octokit.demo) {
+          setMessage({ text: 'Demo mode: Save to GitHub disabled. Connect with a real token to enable saving.', type: 'info' });
+          setLoading(false);
+          return;
+        }
+        setLoading(true);
+        try {
+          const fullHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>One Wave Radio</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>body { margin: 0; font-family: system-ui, sans-serif; background: #0f0f0f; color: #fff; }</style>
+</head>
+<body>
+${blocks.map(b => b.html).join('\n')}
+</body>
+</html>`;
+
+          // Get current file SHA if exists
+          let sha;
+          try {
+            const { data } = await octokit.rest.repos.getContent({
+              owner: config.owner,
+              repo: config.repo,
+              path: config.path,
+            });
+            sha = data.sha;
+          } catch (e) {
+            // File doesn't exist yet
+          }
+
+          await octokit.rest.repos.createOrUpdateFileContents({
+            owner: config.owner,
+            repo: config.repo,
+            path: config.path,
+            message: 'Update site via OneWave Studio',
+            content: btoa(unescape(encodeURIComponent(fullHTML))),
+            ...(sha ? { sha } : {})
+          });
+
+          setMessage({ text: 'Published to GitHub!', type: 'success' });
+        } catch (err) {
+          setMessage({ text: 'Publish failed: ' + err.message, type: 'error' });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+    
+    // ---- Add Text Tool ----
+    const addTextElement = () => {
+      const id = 'overlay-' + overlayIdCounter.current++;
+      setOverlayElements(prev => [...prev, {
+        id, type: 'text', content: 'Double-click to edit',
+        x: 100, y: 100, width: 200, height: 40, fontSize: 16
+      }]);
+    };
+
+    // ---- Add Photo Tool ----
+    const addPhotoElement = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const id = 'overlay-' + overlayIdCounter.current++;
+          setOverlayElements(prev => [...prev, {
+            id, type: 'photo', src: ev.target.result,
+            x: 100, y: 150, width: 300, height: 200
+          }]);
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    };
+
+    // ---- Update overlay element ----
+    const updateOverlayElement = (id, updates) => {
+      setOverlayElements(prev => prev.map(el => el.id === id ? { ...el, ...updates } : el));
+    };
+
+    // ---- Delete overlay element ----
+    const deleteOverlayElement = (id) => {
+      setOverlayElements(prev => prev.filter(el => el.id !== id));
+    };
+
+
+    // ---- Drag overlay element ----
+    const startOverlayDrag = (e, id) => {
+      if (buttonsLockedRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const el = e.currentTarget.closest('.overlay-element');
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const origLeft = parseInt(el.style.left) || 0;
+      const origTop = parseInt(el.style.top) || 0;
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        updateOverlayElement(id, { x: origLeft + dx, y: origTop + dy });
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+
+    // ---- Resize overlay element ----
+    const startOverlayResize = (e, id, direction) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const elem = overlayElements.find(el => el.id === id);
+      if (!elem) return;
+      const origW = elem.width;
+      const origH = elem.height;
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        let updates = {};
+        if (direction === 'both' || direction === 'right') updates.width = Math.max(50, origW + dx);
+        if (direction === 'both' || direction === 'bottom') updates.height = Math.max(20, origH + dy);
+        updateOverlayElement(id, updates);
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+
+      // ─── RENDER ────────────────────────────────────────────────────
+      if (!octokit) {
+
+
+    return (
+          <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-purple-950">
+            <div class="bg-gray-900 p-8 rounded-2xl shadow-2xl max-w-md w-full border border-gray-800">
+              <h1 class="text-3xl font-bold mb-2 text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-purple-400">
+                🎵 OneWave Studio
+              </h1>
+              <p class="text-gray-400 text-center mb-6">Connect your GitHub repo to start editing</p>
+              
+              {message.text && (
+                <div class={`mb-4 p-3 rounded-lg text-sm ${message.type === 'error' ? 'bg-red-900/50 text-red-300' : 'bg-green-900/50 text-green-300'}`}>
+                  {message.text}
+                </div>
+              )}
+
+              <div class="space-y-4">
+                <div>
+                  <label class="text-sm text-gray-400 block mb-1">GitHub Personal Access Token</label>
+                  <input
+                    type="password"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-pink-500 focus:outline-none"
+                    placeholder="ghp_xxxxxxxxxxxx"
+                    value={config.token}
+                    onChange={(e) => setConfig({ ...config, token: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label class="text-sm text-gray-400 block mb-1">Owner (username)</label>
+                  <input
