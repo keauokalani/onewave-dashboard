@@ -17,18 +17,27 @@ class Octokit {
   constructor(opts) {
     var self = this;
     self._auth = opts.auth;
-    self.rest = { repos: {
-      getContent: function(p) {
-        var url = "https://api.github.com/repos/" + p.owner + "/" + p.repo + "/contents/" + p.path;
-        return fetch(url, { headers: { Authorization: "token " + self._auth, Accept: "application/vnd.github.v3+json" } }).then(function(r) { if (!r.ok) throw new Error("GitHub API " + r.status); return r.json(); }).then(function(d) { return { data: d }; });
+    self.rest = {
+      users: {
+        getAuthenticated: function() {
+          return fetch("https://api.github.com/user", {
+            headers: { Authorization: "token " + self._auth, Accept: "application/vnd.github.v3+json" }
+          }).then(function(r) { if (!r.ok) throw new Error("GitHub API " + r.status); return r.json(); }).then(function(d) { return { data: d }; });
+        }
       },
-      createOrUpdateFileContents: function(p) {
-        var url = "https://api.github.com/repos/" + p.owner + "/" + p.repo + "/contents/" + p.path;
-        var body = { message: p.message, content: p.content };
-        if (p.sha) body.sha = p.sha;
-        return fetch(url, { method: "PUT", headers: { Authorization: "token " + self._auth, Accept: "application/vnd.github.v3+json", "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function(r) { if (!r.ok) return r.json().then(function(e) { throw new Error(e.message || "GitHub API " + r.status); }); return r.json(); }).then(function(d) { return { data: d }; });
+      repos: {
+        getContent: function(p) {
+          var url = "https://api.github.com/repos/" + p.owner + "/" + p.repo + "/contents/" + p.path;
+          return fetch(url, { headers: { Authorization: "token " + self._auth, Accept: "application/vnd.github.v3+json" } }).then(function(r) { if (!r.ok) throw new Error("GitHub API " + r.status); return r.json(); }).then(function(d) { return { data: d }; });
+        },
+        createOrUpdateFileContents: function(p) {
+          var url = "https://api.github.com/repos/" + p.owner + "/" + p.repo + "/contents/" + p.path;
+          var body = { message: p.message, content: p.content };
+          if (p.sha) body.sha = p.sha;
+          return fetch(url, { method: "PUT", headers: { Authorization: "token " + self._auth, Accept: "application/vnd.github.v3+json", "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function(r) { if (!r.ok) return r.json().then(function(e) { throw new Error(e.message || "GitHub API " + r.status); }); return r.json(); }).then(function(d) { return { data: d }; });
+        }
       }
-    }};
+    };
   }
 }
 </script>
@@ -160,8 +169,8 @@ class Octokit {
       const [octokit, setOctokit] = useState(null);
       const [config, setConfig] = useState({
         token: '',
-        owner: '',
-        repo: 'onewaveradio.com',
+        owner: 'keauokalani',
+        repo: 'onewave-dashboard',
         path: 'index.html'
       });
       const [blocks, setBlocks] = useState([]);
