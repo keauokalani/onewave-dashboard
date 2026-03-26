@@ -30,13 +30,13 @@
         <audio id="owrPlayer" preload="auto"></audio>
         <div class="flex items-center justify-center gap-4 mt-4 mb-4">
             <button onclick="window.owrPlayPrev()" class="bg-gray-700 text-white px-4 py-2 rounded-full transition" title="Previous Track">
-            <i class="fas fa-backward"></i> -15s
+            <i class="fas fa-backward"></i> Prev
           </button>
             <button id="listenLiveBtn" onclick="window.owrListenLive()" class="bg-pink-600 hover:bg-pink-500 text-white px-8 py-3 rounded-full font-semibold text-lg transition">
             <i class="fas fa-play"></i> Listen Live
           </button>
             <button onclick="window.owrSkipForward()" class="bg-gray-700 text-white px-4 py-2 rounded-full transition" title="Next Track">
-            +15s <i class="fas fa-forward"></i>
+            Next <i class="fas fa-forward"></i>
           </button>
         </div>
     <script>
@@ -72,7 +72,7 @@
       var t = owrTracks[index];
       if (trackTitle) trackTitle.textContent = "Now Playing: " + t.title;
       player.src = t.url;
-      player.play().then(function() { owrIsPlaying = true; var btn = document.getElementById("listenLiveBtn"); if (btn) btn.innerHTML = '<i class="fas fa-pause"></i> On Air'; }).catch(function(e) { owrIsPlaying = true; if (trackTitle) trackTitle.textContent = "\u25B6 Tap to play: " + t.title; });
+      player.play().then(function() { owrIsPlaying = true; var btn = document.getElementById("listenLiveBtn"); if (btn) btn.innerHTML = '<i class="fas fa-pause"></i> On Air'; }).catch(function(e) { owrIsPlaying = true; if (trackTitle) trackTitle.textContent = "\u25B6 Tap to play: " + t.title; var btn = document.getElementById("listenLiveBtn"); if (btn) btn.innerHTML = '<i class="fas fa-play"></i> Listen Live'; });
     }
     window.owrListenLive = function() {
       var p = owrGetPlayer(); if (!p) return;
