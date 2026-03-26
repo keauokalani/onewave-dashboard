@@ -23,14 +23,34 @@
 <section class="py-20 bg-black text-center relative overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-r from-purple-900 to-blue-900 opacity-50"></div>
           <div class="relative z-10 max-w-3xl mx-auto px-4">
-            <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-pink-500 animate-pulse flex items-center justify-center">
-              <i class="fas fa-radio text-4xl text-white"></i>
-            </div>
             <h2 class="text-4xl font-bold mb-2" data-field="title" editable>ON AIR NOW</h2>
             <p class="text-xl text-gray-300 mb-8" data-field="artist" editable>Live Stream</p>
-            <audio controls class="w-full max-w-md mx-auto" crossorigin="anonymous">
-              <source src="https://pub-2aa01387a331477abb91b2bed61747b9.r2.dev/Island_Bounce.mp3" type="audio/mpeg">
-            </audio>
+        <!-- Custom Player with Listen Live + Skip buttons -->
+        <audio id="radioPlayer" src="https://pub-2aa01387a331477abb91b2bed61747b9.r2.dev/Island_Bounce.mp3" preload="auto"></audio>
+        <div class="flex items-center justify-center gap-4 mt-4 mb-4">
+          <button onclick="document.getElementById('radioPlayer').currentTime -= 15" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full transition" title="Skip Back 15s">
+            <i class="fas fa-backward"></i> -15s
+          </button>
+          <button id="listenLiveBtn" onclick="togglePlay()" class="bg-pink-600 hover:bg-pink-500 text-white px-8 py-3 rounded-full font-semibold text-lg transition">
+            <i class="fas fa-play"></i> Listen Live
+          </button>
+          <button onclick="document.getElementById('radioPlayer').currentTime += 15" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full transition" title="Skip Forward 15s">
+            +15s <i class="fas fa-forward"></i>
+          </button>
+        </div>
+        <script>
+        function togglePlay() {
+          var audio = document.getElementById('radioPlayer');
+          var btn = document.getElementById('listenLiveBtn');
+          if (audio.paused) {
+            audio.play();
+            btn.innerHTML = '<i class="fas fa-pause"></i> On Air';
+          } else {
+            audio.pause();
+            btn.innerHTML = '<i class="fas fa-play"></i> Listen Live';
+          }
+        }
+        </script>
           </div>
         </section>
 <section class="py-20 bg-gray-950" id="schedule">
