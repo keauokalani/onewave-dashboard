@@ -1,55 +1,2188 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>OneWave Studio - Redirecting...</title>
-      <meta http-equiv="refresh" content="0;url=https://onewaveradio.com/#studio" />
-      <style>
-                body {
-                              margin: 0;
-                              min-height: 100vh;
-                              display: flex;
-                              align-items: center;
-                              justify-content: center;
-                              background: #0a0a0f;
-                              color: #fff;
-                              font-family: 'Inter', system-ui, sans-serif;
-                }
-                .redirect-msg {
-                              text-align: center;
-                              padding: 2rem;
-                }
-                .redirect-msg h1 {
-                              font-size: 1.5rem;
-                              margin-bottom: 1rem;
-                }
-                .redirect-msg p {
-                              color: #9ca3af;
-                              margin-bottom: 1.5rem;
-                }
-                .redirect-msg a {
-                              color: #a78bfa;
-                              text-decoration: underline;
-                }
-            </style>
-  </head>
-  <body>
-        <div class="redirect-msg">
-                  <h1>OneWave Studio has moved!</h1>
-                <p>The editor is now integrated into the main site with simplified login.</p>
-                <p>Redirecting you now...</p>
-                <p><a href="https://onewaveradio.com/#studio">Click here if not redirected automatically</a>a></p>
-        </div>div>
-      <script>
-                // Redirect to the new integrated Studio
-                // The new Studio uses GitHub token auth with localStorage persistence
-                // instead of the old password-based auth with sessionStorage
-                window.location.replace('https://onewaveradio.com/#studio');
-      </script>
-  </body>
-</html>html>
-      </script></p></p></h1>
-  </body>
-      </style></title>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OneWave Radio</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      min-height: 100vh;
+    }
+
+    /* Animated gradient background */
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bg-glow::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 50%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+                  radial-gradient(ellipse at 50% 80%, rgba(249, 115, 22, 0.05) 0%, transparent 50%);
+      animation: drift 20s ease-in-out infinite alternate;
+    }
+    @keyframes drift {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(-3%, 3%) rotate(3deg); }
+    }
+
+    /* Vinyl record spin */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .vinyl-spin {
+      animation: spin 3s linear infinite;
+    }
+    .vinyl-paused {
+      animation-play-state: paused;
+    }
+
+    /* Pulsing ring around artwork */
+    @keyframes pulse-ring {
+      0%, 100% { transform: scale(1); opacity: 0.3; }
+      50% { transform: scale(1.08); opacity: 0.6; }
+    }
+    .pulse-ring {
+      animation: pulse-ring 2s ease-in-out infinite;
+    }
+    .pulse-ring-paused {
+      animation-play-state: paused;
+    }
+
+    /* Equalizer bars */
+    @keyframes eq1 { 0%,100%{height:8px} 50%{height:28px} }
+    @keyframes eq2 { 0%,100%{height:16px} 50%{height:36px} }
+    @keyframes eq3 { 0%,100%{height:12px} 50%{height:32px} }
+    @keyframes eq4 { 0%,100%{height:20px} 50%{height:24px} }
+    @keyframes eq5 { 0%,100%{height:10px} 50%{height:30px} }
+    .eq-bar:nth-child(1) { animation: eq1 0.8s ease-in-out infinite; }
+    .eq-bar:nth-child(2) { animation: eq2 0.6s ease-in-out infinite 0.1s; }
+    .eq-bar:nth-child(3) { animation: eq3 0.7s ease-in-out infinite 0.2s; }
+    .eq-bar:nth-child(4) { animation: eq4 0.5s ease-in-out infinite 0.05s; }
+    .eq-bar:nth-child(5) { animation: eq5 0.9s ease-in-out infinite 0.15s; }
+    .eq-paused .eq-bar { animation-play-state: paused !important; }
+
+    /* Progress bar thumb */
+    input[type="range"].progress-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+      width: 100%;
+    }
+    input[type="range"].progress-slider::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.1);
+    }
+    input[type="range"].progress-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: #38bdf8;
+      margin-top: -5px;
+      box-shadow: 0 0 10px rgba(56,189,248,0.5);
+      transition: transform 0.15s;
+    }
+    input[type="range"].progress-slider:hover::-webkit-slider-thumb {
+      transform: scale(1.3);
+    }
+    input[type="range"].progress-slider::-moz-range-track {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.1);
+    }
+    input[type="range"].progress-slider::-moz-range-thumb {
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: #38bdf8;
+      border: none;
+      box-shadow: 0 0 10px rgba(56,189,248,0.5);
+    }
+
+    /* Volume slider */
+    input[type="range"].volume-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+      width: 100%;
+    }
+    input[type="range"].volume-slider::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.15);
+    }
+    input[type="range"].volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 14px;
+      width: 14px;
+      border-radius: 50%;
+      background: #a855f7;
+      margin-top: -5px;
+      box-shadow: 0 0 8px rgba(168,85,247,0.5);
+    }
+    input[type="range"].volume-slider::-moz-range-track {
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.15);
+    }
+    input[type="range"].volume-slider::-moz-range-thumb {
+      height: 14px;
+      width: 14px;
+      border-radius: 50%;
+      background: #a855f7;
+      border: none;
+      box-shadow: 0 0 8px rgba(168,85,247,0.5);
+    }
+
+    /* Scrollbar for playlist */
+    .playlist-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .playlist-scroll::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.03);
+      border-radius: 3px;
+    }
+    .playlist-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.15);
+      border-radius: 3px;
+    }
+    .playlist-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.25);
+    }
+
+    /* Smooth fade-in */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    /* Marquee for long titles */
+    @keyframes marquee {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-100%); }
+    }
+    .marquee-text {
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .marquee-animate .marquee-text {
+      animation: marquee 12s linear infinite;
+    }
+
+    /* ============================================
+       ONEWAVE STUDIO STYLES
+       ============================================ */
+    .studio-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: #0a0a0f;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .studio-code-editor {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      tab-size: 2;
+      resize: none;
+      background: transparent;
+      color: #e2e8f0;
+      caret-color: #38bdf8;
+    }
+    .studio-code-editor:focus {
+      outline: none;
+    }
+
+    .studio-code-editor::selection {
+      background: rgba(56, 189, 248, 0.25);
+    }
+
+    /* File tree */
+    .file-tree-item {
+      transition: all 0.1s;
+    }
+    .file-tree-item:hover {
+      background: rgba(255,255,255,0.04);
+    }
+    .file-tree-item.active {
+      background: rgba(56, 189, 248, 0.1);
+      border-left: 2px solid #38bdf8;
+    }
+
+    /* Studio scrollbar */
+    .studio-scroll::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .studio-scroll::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.02);
+    }
+    .studio-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+    }
+    .studio-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Slide-in animation */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .slide-up {
+      animation: slideUp 0.3s ease-out forwards;
+    }
+
+    /* Step indicator */
+    .step-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* Diff highlight */
+    .diff-added { background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22c55e; }
+    .diff-removed { background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; }
+
+    /* Loading spinner */
+    @keyframes studio-spin {
+      to { transform: rotate(360deg); }
+    }
+    .studio-spinner {
+      animation: studio-spin 0.8s linear infinite;
+    }
+
+    /* Token input */
+    .token-input {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body class="text-white overflow-x-hidden">
+
+  <div class="bg-glow"></div>
+
+  <div id="playerView" class="relative z-10 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+      <div class="flex items-center gap-3">
+        <!-- Wave logo -->
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+            <path d="M2 12c1-3 2.5-6 4-6s3 6 4 6 2.5-6 4-6 3 6 4 6 2.5-6 4-6"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight">OneWave Radio</h1>
+          <p class="text-xs text-white/40 -mt-0.5">Community Music Player</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 text-xs text-white/50">
+          <span class="w-2 h-2 rounded-full bg-white/30 animate-pulse"></span>
+          Loading...
+        </div>
+        <!-- Studio Button -->
+        <button onclick="openStudio()" class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-sky-500/20 to-purple-500/20 border border-sky-400/20 text-xs text-sky-300 hover:text-sky-200 hover:border-sky-400/40 hover:from-sky-500/30 hover:to-purple-500/30 transition-all duration-200" title="Open OneWave Studio Editor">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          Studio
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center p-4 sm:p-8">
+      <div class="w-full max-w-5xl fade-in">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+          <!-- Player Card (left/main) -->
+          <div class="lg:col-span-3 bg-white/[0.03] backdrop-blur-xl rounded-3xl border border-white/[0.06] p-6 sm:p-8 shadow-2xl">
+
+            <!-- Vinyl + Track Info -->
+            <div class="flex flex-col items-center text-center mb-8">
+              <!-- Vinyl Record Visual -->
+              <div class="relative mb-6">
+                <div id="pulseRing" class="absolute inset-[-8px] rounded-full border-2 border-sky-400/20 pulse-ring pulse-ring-paused"></div>
+                <div id="vinylDisc" class="w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-gradient-to-br from-gray-800 via-gray-900 to-black border-4 border-gray-700/50 shadow-2xl vinyl-spin vinyl-paused flex items-center justify-center relative overflow-hidden">
+                  <!-- Grooves -->
+                  <div class="absolute inset-4 rounded-full border border-white/[0.04]"></div>
+                  <div class="absolute inset-8 rounded-full border border-white/[0.04]"></div>
+                  <div class="absolute inset-12 rounded-full border border-white/[0.04]"></div>
+                  <div class="absolute inset-16 rounded-full border border-white/[0.04]"></div>
+                  <!-- Center label -->
+                  <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-sky-500 to-purple-600 flex items-center justify-center z-10 shadow-inner">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+                      <path d="M2 12c1-3 2.5-6 4-6s3 6 4 6 2.5-6 4-6 3 6 4 6 2.5-6 4-6"/>
+                    </svg>
+                  </div>
+                  <!-- Shine -->
+                  <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.03] to-transparent"></div>
+                </div>
+              </div>
+
+              <!-- Track Title -->
+              <div class="w-full max-w-xs sm:max-w-sm overflow-hidden mb-1">
+                <div id="trackTitleWrapper" class="relative">
+                  <h2 id="trackTitle" class="text-xl sm:text-2xl font-bold text-white/90 marquee-text">
+                    OneWave Radio
+                  </h2>
+                </div>
+              </div>
+              <p id="trackSubtitle" class="text-sm text-white/40 mt-1">Select a track to begin</p>
+
+              <!-- Equalizer -->
+              <div id="equalizer" class="flex items-end gap-1 h-10 mt-4 eq-paused">
+                <div class="eq-bar w-1 bg-sky-400/70 rounded-full" style="height:8px"></div>
+                <div class="eq-bar w-1 bg-sky-400/60 rounded-full" style="height:16px"></div>
+                <div class="eq-bar w-1 bg-purple-400/70 rounded-full" style="height:12px"></div>
+                <div class="eq-bar w-1 bg-purple-400/60 rounded-full" style="height:20px"></div>
+                <div class="eq-bar w-1 bg-sky-400/70 rounded-full" style="height:10px"></div>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mb-6">
+              <input type="range" id="progressBar" class="progress-slider" min="0" max="100" value="0" step="0.1" />
+              <div class="flex justify-between text-xs text-white/30 mt-1.5 px-0.5 font-mono">
+                <span id="currentTime">0:00</span>
+                <span id="totalTime">0:00</span>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center justify-center gap-3 sm:gap-5 mb-6">
+              <!-- Shuffle -->
+              <button id="btnShuffle" onclick="reshufflePlaylist()" title="Reshuffle"
+                class="w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-sky-400 hover:bg-white/5 transition-all duration-200">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="16 3 21 3 21 8"></polyline>
+                  <line x1="4" y1="20" x2="21" y2="3"></line>
+                  <polyline points="21 16 21 21 16 21"></polyline>
+                  <line x1="15" y1="15" x2="21" y2="21"></line>
+                  <line x1="4" y1="4" x2="9" y2="9"></line>
+                </svg>
+              </button>
+
+              <!-- Previous -->
+              <button onclick="playPrev()" title="Previous"
+                class="w-12 h-12 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all duration-200 active:scale-90">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                </svg>
+              </button>
+
+              <!-- Play/Pause -->
+              <button id="btnPlayPause" onclick="togglePlay()" title="Play/Pause"
+                class="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center bg-gradient-to-br from-sky-400 to-purple-500 hover:from-sky-300 hover:to-purple-400 text-white shadow-lg shadow-sky-500/25 hover:shadow-sky-400/40 transition-all duration-200 active:scale-90 hover:scale-105">
+                <svg id="iconPlay" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg id="iconPause" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" class="hidden">
+                  <path d="M6 4h4v16H6zM14 4h4v16h-4z"/>
+                </svg>
+              </button>
+
+              <!-- Next -->
+              <button onclick="playNext()" title="Next"
+                class="w-12 h-12 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all duration-200 active:scale-90">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                </svg>
+              </button>
+
+              <!-- Repeat -->
+              <button id="btnRepeat" onclick="toggleRepeat()" title="Repeat"
+                class="w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-purple-400 hover:bg-white/5 transition-all duration-200">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="17 1 21 5 17 9"></polyline>
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                  <polyline points="7 23 3 19 7 15"></polyline>
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Volume -->
+            <div class="flex items-center gap-3 px-2">
+              <button onclick="toggleMute()" class="text-white/40 hover:text-white/70 transition-colors flex-shrink-0">
+                <svg id="iconVol" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+                <svg id="iconMute" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <line x1="23" y1="9" x2="17" y2="15"></line>
+                  <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+              </button>
+              <input type="range" id="volumeBar" class="volume-slider flex-1" min="0" max="100" value="80" />
+              <span id="volumeLabel" class="text-xs text-white/30 w-8 text-right font-mono">80%</span>
+            </div>
+          </div>
+
+          <!-- Playlist Panel (right) -->
+          <div class="lg:col-span-2 bg-white/[0.03] backdrop-blur-xl rounded-3xl border border-white/[0.06] shadow-2xl flex flex-col overflow-hidden">
+            <div class="px-5 pt-5 pb-3 border-b border-white/[0.06] flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-semibold text-white/70">Playlist</h3>
+                <p id="playlistCount" class="text-xs text-white/30 mt-0.5">Loading tracks...</p>
+              </div>
+              <button onclick="reshufflePlaylist()" class="text-xs text-sky-400/60 hover:text-sky-400 transition-colors px-2 py-1 rounded-lg hover:bg-white/5">
+                Shuffle
+              </button>
+            </div>
+            <div id="playlistContainer" class="flex-1 overflow-y-auto playlist-scroll p-2 max-h-[420px] lg:max-h-none">
+              <!-- Skeleton loaders -->
+              <div class="space-y-1 p-2">
+                <div class="h-12 bg-white/[0.03] rounded-xl animate-pulse"></div>
+                <div class="h-12 bg-white/[0.03] rounded-xl animate-pulse" style="animation-delay:0.1s"></div>
+                <div class="h-12 bg-white/[0.03] rounded-xl animate-pulse" style="animation-delay:0.2s"></div>
+                <div class="h-12 bg-white/[0.03] rounded-xl animate-pulse" style="animation-delay:0.3s"></div>
+                <div class="h-12 bg-white/[0.03] rounded-xl animate-pulse" style="animation-delay:0.4s"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Error Toast -->
+        <div id="errorToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-500/90 backdrop-blur-sm text-white text-sm px-5 py-3 rounded-2xl shadow-2xl transition-all duration-300 translate-y-20 opacity-0 pointer-events-none z-50 flex items-center gap-2 max-w-md">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="flex-shrink-0">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+          <span id="errorMessage">Error loading track</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-white/20 py-4 border-t border-white/5">
+      OneWave Radio &mdash; Powered by the community
+    </footer>
+  </div>
+
+  <!-- =============================================
+       ONEWAVE STUDIO - Full-screen Editor Overlay
+       ============================================= -->
+  <div id="studioOverlay" class="studio-overlay hidden">
+
+    <!-- Studio Header -->
+    <header class="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08] bg-white/[0.02] flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+            <path d="M2 12c1-3 2.5-6 4-6s3 6 4 6 2.5-6 4-6 3 6 4 6 2.5-6 4-6"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-sm font-bold">OneWave Studio</h1>
+          <p id="studioRepoInfo" class="text-[10px] text-white/30">keauokalani/onewave-dashboard</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- User info (shown when logged in) -->
+        <div id="studioUserInfo" class="hidden items-center gap-2 px-3 py-1 rounded-full bg-white/5 text-xs text-white/50">
+          <img id="studioAvatar" class="w-5 h-5 rounded-full" src="" alt="" />
+          <span id="studioUsername"></span>
+        </div>
+        <!-- Connection status -->
+        <div id="studioStatus" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 text-xs text-white/40">
+          <span id="studioStatusDot" class="w-2 h-2 rounded-full bg-white/20"></span>
+          <span id="studioStatusText">Not connected</span>
+        </div>
+        <!-- Close Studio -->
+        <button onclick="closeStudio()" class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-white/40 hover:text-white transition-all" title="Back to Player">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Studio Body - switches between Login and Editor -->
+    <div id="studioBody" class="flex-1 overflow-hidden">
+
+      <!-- =============================================
+           LOGIN SCREEN (single-step)
+           ============================================= -->
+      <div id="studioLogin" class="h-full flex items-center justify-center p-6 overflow-y-auto">
+        <div class="w-full max-w-lg slide-up">
+          <!-- Logo + Title -->
+          <div class="text-center mb-8">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-sky-500/20">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-1">OneWave Studio</h2>
+            <p class="text-sm text-white/40">Connect to GitHub to edit your site</p>
+          </div>
+
+          <!-- Single-Step Login Card -->
+          <div class="bg-white/[0.04] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-6">
+
+            <!-- Token Input -->
+            <div class="mb-5">
+              <label class="block text-sm font-medium text-white/70 mb-2">GitHub Personal Access Token</label>
+              <div class="relative">
+                <input type="password" id="tokenInput"
+                  class="token-input w-full bg-white/[0.05] border border-white/[0.1] rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-sky-400/50 focus:ring-1 focus:ring-sky-400/25 transition-all"
+                  placeholder="github_pat_xxxxxxxxxxxx..."
+                  autocomplete="off" spellcheck="false" />
+                <button onclick="toggleTokenVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors" title="Toggle visibility">
+                  <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Remember me -->
+            <label class="flex items-center gap-2.5 mb-5 cursor-pointer select-none group">
+              <input type="checkbox" id="rememberToken" checked
+                class="w-4 h-4 rounded border-white/20 bg-white/5 text-sky-400 focus:ring-sky-400/25 cursor-pointer" />
+              <span class="text-sm text-white/50 group-hover:text-white/70 transition-colors">Keep me logged in across sessions</span>
+            </label>
+
+            <!-- Login Button -->
+            <button onclick="studioLogin()" id="loginBtn"
+              class="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-purple-500 hover:from-sky-400 hover:to-purple-400 text-white font-semibold text-sm shadow-lg shadow-sky-500/20 hover:shadow-sky-400/30 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+              Connect to GitHub
+            </button>
+
+            <!-- Login Error -->
+            <div id="loginError" class="hidden mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400 flex items-start gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0 mt-0.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span id="loginErrorMsg"></span>
+            </div>
+          </div>
+
+          <!-- Token Setup Guide (collapsible) -->
+          <details class="mt-5 bg-white/[0.02] rounded-2xl border border-white/[0.06] overflow-hidden">
+            <summary class="px-5 py-3.5 cursor-pointer text-sm text-white/50 hover:text-white/70 transition-colors flex items-center gap-2 select-none">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="flex-shrink-0">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              How to create a GitHub token (one-time setup)
+            </summary>
+            <div class="px-5 pb-5 space-y-4 text-sm">
+              <div class="h-px bg-white/[0.06]"></div>
+
+              <!-- Step 1 -->
+              <div class="flex gap-3">
+                <div class="step-circle bg-sky-500/20 text-sky-400 mt-0.5">1</div>
+                <div>
+                  <p class="text-white/70 font-medium">Go to GitHub Token Settings</p>
+                  <p class="text-white/40 text-xs mt-0.5">Open <a href="https://github.com/settings/tokens?type=beta" target="_blank" class="text-sky-400 underline underline-offset-2 hover:text-sky-300">Fine-grained tokens</a> in GitHub Settings</p>
+                </div>
+              </div>
+
+              <!-- Step 2 -->
+              <div class="flex gap-3">
+                <div class="step-circle bg-sky-500/20 text-sky-400 mt-0.5">2</div>
+                <div>
+                  <p class="text-white/70 font-medium">Generate new token</p>
+                  <p class="text-white/40 text-xs mt-0.5">Click <strong class="text-white/60">"Generate new token"</strong></p>
+                </div>
+              </div>
+
+              <!-- Step 3 -->
+              <div class="flex gap-3">
+                <div class="step-circle bg-sky-500/20 text-sky-400 mt-0.5">3</div>
+                <div>
+                  <p class="text-white/70 font-medium">Configure the token</p>
+                  <div class="mt-2 space-y-2 text-xs text-white/40">
+                    <div class="flex items-start gap-2">
+                      <span class="text-emerald-400 mt-0.5">&#10003;</span>
+                      <span><strong class="text-white/60">Name:</strong> "OneWave Studio" (or anything)</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                      <span class="text-emerald-400 mt-0.5">&#10003;</span>
+                      <span><strong class="text-white/60">Expiration:</strong> Choose the maximum (1 year) or "Custom" with a far-future date. You'll get an email reminder before it expires.</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                      <span class="text-emerald-400 mt-0.5">&#10003;</span>
+                      <span><strong class="text-white/60">Repository access:</strong> Select <strong class="text-white/60">"Only select repositories"</strong> and pick <code class="px-1.5 py-0.5 bg-white/[0.06] rounded text-sky-300/80">keauokalani/onewave-dashboard</code></span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                      <span class="text-emerald-400 mt-0.5">&#10003;</span>
+                      <span><strong class="text-white/60">Permissions:</strong> Under "Repository permissions", set <strong class="text-white/60">Contents</strong> to <strong class="text-emerald-400/80">Read and write</strong>. That's it &mdash; just one permission.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 4 -->
+              <div class="flex gap-3">
+                <div class="step-circle bg-sky-500/20 text-sky-400 mt-0.5">4</div>
+                <div>
+                  <p class="text-white/70 font-medium">Copy & paste</p>
+                  <p class="text-white/40 text-xs mt-0.5">Copy the token (starts with <code class="px-1 py-0.5 bg-white/[0.06] rounded text-sky-300/80">github_pat_</code>) and paste it above. If "Keep me logged in" is checked, you won't need to do this again.</p>
+                </div>
+              </div>
+
+              <!-- Security note -->
+              <div class="mt-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 text-xs text-amber-300/60 flex items-start gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0 mt-0.5">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <span>Your token is stored <strong>only in your browser's localStorage</strong> and is sent only to GitHub's API. It is never sent to any other server. Use "Logout" below to clear it at any time.</span>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <!-- =============================================
+           EDITOR SCREEN (shown after login)
+           ============================================= -->
+      <div id="studioEditor" class="hidden h-full flex flex-col">
+
+        <!-- Editor Toolbar -->
+        <div class="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-white/[0.015] flex-shrink-0">
+          <div class="flex items-center gap-2">
+            <!-- Branch indicator -->
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] text-xs text-white/40">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="6" y1="3" x2="6" y2="15"></line>
+                <circle cx="18" cy="6" r="3"></circle>
+                <circle cx="6" cy="18" r="3"></circle>
+                <path d="M18 9a9 9 0 0 1-9 9"></path>
+              </svg>
+              <span>main</span>
+            </div>
+            <!-- Current file path -->
+            <div class="flex items-center gap-1 text-xs text-white/30">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              <span id="currentFilePath">Select a file</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- Unsaved indicator -->
+            <span id="unsavedDot" class="hidden w-2 h-2 rounded-full bg-amber-400"></span>
+            <!-- Save/Commit Button -->
+            <button onclick="studioCommit()" id="commitBtn"
+              class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/20 text-xs text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-300 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Commit & Push
+            </button>
+            <!-- Refresh -->
+            <button onclick="studioRefreshFiles()" class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/5 text-white/30 hover:text-white/60 transition-all" title="Refresh files">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+            </button>
+            <!-- Logout -->
+            <button onclick="studioLogout()" class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-500/10 text-white/30 hover:text-red-400 transition-all" title="Logout & clear token">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Editor Main Area -->
+        <div class="flex-1 flex overflow-hidden">
+          <!-- File Sidebar -->
+          <div class="w-56 flex-shrink-0 border-r border-white/[0.06] bg-white/[0.01] flex flex-col overflow-hidden">
+            <div class="px-3 py-2 text-[10px] uppercase tracking-widest text-white/20 font-semibold">Files</div>
+            <div id="fileBrowser" class="flex-1 overflow-y-auto studio-scroll text-xs">
+              <!-- Files loaded dynamically -->
+              <div class="p-3 text-white/20 text-xs">Loading...</div>
+            </div>
+          </div>
+
+          <!-- Code Editor -->
+          <div class="flex-1 flex flex-col overflow-hidden bg-[#0d0d14]">
+            <!-- Editor loading / empty state -->
+            <div id="editorEmpty" class="flex-1 flex items-center justify-center text-white/15 text-sm">
+              <div class="text-center">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="mx-auto mb-3 opacity-40">
+                  <polyline points="16 18 22 12 16 6"></polyline>
+                  <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+                <p>Select a file to edit</p>
+              </div>
+            </div>
+            <!-- Actual editor textarea -->
+            <textarea id="codeEditor" class="studio-code-editor hidden flex-1 w-full p-4 studio-scroll" spellcheck="false" wrap="off"></textarea>
+          </div>
+        </div>
+
+        <!-- Commit Modal -->
+        <div id="commitModal" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div class="w-full max-w-md bg-[#12121a] border border-white/[0.08] rounded-2xl p-6 shadow-2xl slide-up">
+            <h3 class="text-lg font-bold mb-1">Commit Changes</h3>
+            <p id="commitFilePath" class="text-xs text-white/30 mb-4 font-mono"></p>
+
+            <label class="block text-sm text-white/60 mb-1.5">Commit message</label>
+            <input type="text" id="commitMessage"
+              class="w-full bg-white/[0.05] border border-white/[0.1] rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-sky-400/50 focus:ring-1 focus:ring-sky-400/25 mb-4"
+              placeholder="Update site content" />
+
+            <div id="commitError" class="hidden mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400"></div>
+
+            <div class="flex items-center gap-3 justify-end">
+              <button onclick="closeCommitModal()" class="px-4 py-2 rounded-xl text-sm text-white/40 hover:text-white/70 hover:bg-white/5 transition-all">
+                Cancel
+              </button>
+              <button onclick="executeCommit()" id="executeCommitBtn"
+                class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-medium shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Push to GitHub
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Studio Toast -->
+    <div id="studioToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] px-5 py-3 rounded-2xl text-sm shadow-2xl transition-all duration-300 translate-y-20 opacity-0 pointer-events-none flex items-center gap-2 max-w-md backdrop-blur-sm">
+      <span id="studioToastMsg"></span>
+    </div>
+  </div>
+
+
+  <!-- Hidden Audio Element -->
+  <audio id="audioPlayer" crossorigin="anonymous" preload="auto"></audio>
+
+  <script>
+    // ==========================================
+    // OneWave Radio - Music Player
+    // ==========================================
+
+    const PLAYLIST_URL = 'https://pub-d36e4083c76148dfbbc85cf6ec55e2cc.r2.dev/playlist.json';
+    const R2_BASE = 'https://pub-d36e4083c76148dfbbc85cf6ec55e2cc.r2.dev/';
+
+    // State
+    let originalPlaylist = [];
+    let playlist = [];
+    let currentIndex = -1;
+    let isPlaying = false;
+    let repeatMode = 'none'; // none, all, one
+    let isSeeking = false;
+    let errorCount = 0;
+    const MAX_CONSECUTIVE_ERRORS = 5;
+
+    // DOM Elements
+    const audio = document.getElementById('audioPlayer');
+    const trackTitle = document.getElementById('trackTitle');
+    const trackTitleWrapper = document.getElementById('trackTitleWrapper');
+    const trackSubtitle = document.getElementById('trackSubtitle');
+    const progressBar = document.getElementById('progressBar');
+    const currentTimeEl = document.getElementById('currentTime');
+    const totalTimeEl = document.getElementById('totalTime');
+    const volumeBar = document.getElementById('volumeBar');
+    const volumeLabel = document.getElementById('volumeLabel');
+    const btnPlayPause = document.getElementById('btnPlayPause');
+    const iconPlay = document.getElementById('iconPlay');
+    const iconPause = document.getElementById('iconPause');
+    const iconVol = document.getElementById('iconVol');
+    const iconMute = document.getElementById('iconMute');
+    const vinylDisc = document.getElementById('vinylDisc');
+    const pulseRing = document.getElementById('pulseRing');
+    const equalizer = document.getElementById('equalizer');
+    const playlistContainer = document.getElementById('playlistContainer');
+    const playlistCount = document.getElementById('playlistCount');
+    const statusBadge = document.getElementById('statusBadge');
+    const btnRepeat = document.getElementById('btnRepeat');
+    const errorToast = document.getElementById('errorToast');
+    const errorMessage = document.getElementById('errorMessage');
+
+    // ==========================================
+    // Fisher-Yates Shuffle
+    // ==========================================
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // ==========================================
+    // Resolve track URL (handle relative & absolute)
+    // ==========================================
+    function resolveUrl(url) {
+      if (!url) return '';
+      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      return R2_BASE + url.replace(/^\/+/, '');
+    }
+
+    // ==========================================
+    // Format time MM:SS
+    // ==========================================
+    function formatTime(seconds) {
+      if (!seconds || isNaN(seconds) || !isFinite(seconds)) return '0:00';
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // ==========================================
+    // Show error toast
+    // ==========================================
+    let toastTimeout;
+    function showError(msg) {
+      errorMessage.textContent = msg;
+      errorToast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        errorToast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+      }, 4000);
+    }
+
+    // ==========================================
+    // Update play/pause UI
+    // ==========================================
+    function updatePlayPauseUI() {
+      if (isPlaying) {
+        iconPlay.classList.add('hidden');
+        iconPause.classList.remove('hidden');
+        vinylDisc.classList.remove('vinyl-paused');
+        pulseRing.classList.remove('pulse-ring-paused');
+        equalizer.classList.remove('eq-paused');
+      } else {
+        iconPlay.classList.remove('hidden');
+        iconPause.classList.add('hidden');
+        vinylDisc.classList.add('vinyl-paused');
+        pulseRing.classList.add('pulse-ring-paused');
+        equalizer.classList.add('eq-paused');
+      }
+    }
+
+    // ==========================================
+    // Update track title with marquee if needed
+    // ==========================================
+    function updateTrackTitle(title) {
+      trackTitle.textContent = title;
+      trackTitleWrapper.classList.remove('marquee-animate');
+      requestAnimationFrame(() => {
+        if (trackTitle.scrollWidth > trackTitleWrapper.offsetWidth + 10) {
+          trackTitleWrapper.classList.add('marquee-animate');
+        }
+      });
+    }
+
+    // ==========================================
+    // Render playlist
+    // ==========================================
+    function renderPlaylist() {
+      if (playlist.length === 0) {
+        playlistContainer.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-12 text-white/30">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-3 opacity-50">
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+            <p class="text-sm">No tracks loaded</p>
+          </div>
+        `;
+        return;
+      }
+
+      playlistContainer.innerHTML = playlist.map((track, i) => {
+        const isActive = i === currentIndex;
+        return `
+          <button onclick="playTrack(${i})"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 group
+              ${isActive
+                ? 'bg-gradient-to-r from-sky-500/15 to-purple-500/10 border border-sky-400/20'
+                : 'hover:bg-white/[0.04] border border-transparent'
+              }"
+          >
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold
+              ${isActive
+                ? 'bg-sky-500/20 text-sky-400'
+                : 'bg-white/[0.04] text-white/25 group-hover:text-white/40'
+              }">
+              ${isActive && isPlaying
+                ? `<div class="flex items-end gap-[2px] h-4">
+                    <div class="w-[3px] bg-sky-400 rounded-full eq-bar" style="height:4px"></div>
+                    <div class="w-[3px] bg-sky-400 rounded-full eq-bar" style="height:8px"></div>
+                    <div class="w-[3px] bg-sky-400 rounded-full eq-bar" style="height:6px"></div>
+                  </div>`
+                : (i + 1)
+              }
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm truncate ${isActive ? 'text-white font-medium' : 'text-white/60 group-hover:text-white/80'}">
+                ${escapeHtml(track.title || 'Untitled Track')}
+              </p>
+            </div>
+            ${isActive
+              ? `<div class="w-2 h-2 rounded-full bg-sky-400 flex-shrink-0 ${isPlaying ? 'animate-pulse' : ''}"></div>`
+              : ''
+            }
+          </button>
+        `;
+      }).join('');
+
+      if (currentIndex >= 0) {
+        const activeBtn = playlistContainer.children[currentIndex];
+        if (activeBtn) {
+          activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ==========================================
+    // Load a specific track
+    // ==========================================
+    function playTrack(index) {
+      if (index < 0 || index >= playlist.length) return;
+
+      currentIndex = index;
+      const track = playlist[currentIndex];
+      const url = resolveUrl(track.url);
+
+      updateTrackTitle(track.title || 'Untitled Track');
+      trackSubtitle.textContent = `Track ${currentIndex + 1} of ${playlist.length}`;
+      progressBar.value = 0;
+      currentTimeEl.textContent = '0:00';
+      totalTimeEl.textContent = '0:00';
+
+      audio.src = url;
+      audio.load();
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          isPlaying = true;
+          errorCount = 0;
+          updatePlayPauseUI();
+          renderPlaylist();
+          updateMediaSession();
+        }).catch(err => {
+          console.warn('Auto-play prevented:', err.message);
+          isPlaying = false;
+          updatePlayPauseUI();
+          renderPlaylist();
+        });
+      }
+
+      renderPlaylist();
+    }
+
+    // ==========================================
+    // Toggle play/pause
+    // ==========================================
+    function togglePlay() {
+      if (playlist.length === 0) return;
+
+      if (currentIndex === -1) {
+        playTrack(0);
+        return;
+      }
+
+      if (audio.paused) {
+        audio.play().then(() => {
+          isPlaying = true;
+          updatePlayPauseUI();
+          renderPlaylist();
+        }).catch(err => {
+          console.warn('Play failed:', err.message);
+          showError('Unable to play. Try clicking again.');
+        });
+      } else {
+        audio.pause();
+        isPlaying = false;
+        updatePlayPauseUI();
+        renderPlaylist();
+      }
+    }
+
+    // ==========================================
+    // Previous / Next
+    // ==========================================
+    function playNext() {
+      if (playlist.length === 0) return;
+      errorCount = 0;
+
+      if (repeatMode === 'one') {
+        audio.currentTime = 0;
+        audio.play();
+        return;
+      }
+
+      let next = currentIndex + 1;
+      if (next >= playlist.length) {
+        if (repeatMode === 'all') {
+          next = 0;
+        } else {
+          isPlaying = false;
+          updatePlayPauseUI();
+          return;
+        }
+      }
+      playTrack(next);
+    }
+
+    function playPrev() {
+      if (playlist.length === 0) return;
+      errorCount = 0;
+
+      if (audio.currentTime > 3) {
+        audio.currentTime = 0;
+        return;
+      }
+
+      let prev = currentIndex - 1;
+      if (prev < 0) {
+        prev = repeatMode === 'all' ? playlist.length - 1 : 0;
+      }
+      playTrack(prev);
+    }
+
+    // ==========================================
+    // Reshuffle
+    // ==========================================
+    function reshufflePlaylist() {
+      const currentTrack = currentIndex >= 0 ? playlist[currentIndex] : null;
+      playlist = shuffleArray(originalPlaylist);
+
+      if (currentTrack) {
+        const newIdx = playlist.findIndex(t => t.url === currentTrack.url && t.title === currentTrack.title);
+        if (newIdx !== -1 && newIdx !== currentIndex) {
+          [playlist[currentIndex], playlist[newIdx]] = [playlist[newIdx], playlist[currentIndex]];
+        }
+      }
+
+      renderPlaylist();
+      showShuffleConfirm();
+    }
+
+    function showShuffleConfirm() {
+      errorMessage.textContent = 'Playlist reshuffled!';
+      errorToast.style.background = 'rgba(56, 189, 248, 0.9)';
+      errorToast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        errorToast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+        errorToast.style.background = '';
+      }, 2000);
+    }
+
+    // ==========================================
+    // Repeat toggle
+    // ==========================================
+    function toggleRepeat() {
+      const modes = ['none', 'all', 'one'];
+      const idx = modes.indexOf(repeatMode);
+      repeatMode = modes[(idx + 1) % modes.length];
+
+      if (repeatMode === 'none') {
+        btnRepeat.classList.remove('text-purple-400', 'bg-purple-500/10');
+        btnRepeat.classList.add('text-white/40');
+        btnRepeat.title = 'Repeat: Off';
+      } else if (repeatMode === 'all') {
+        btnRepeat.classList.remove('text-white/40');
+        btnRepeat.classList.add('text-purple-400', 'bg-purple-500/10');
+        btnRepeat.title = 'Repeat: All';
+      } else {
+        btnRepeat.title = 'Repeat: One';
+      }
+    }
+
+    // ==========================================
+    // Volume
+    // ==========================================
+    function toggleMute() {
+      audio.muted = !audio.muted;
+      iconVol.classList.toggle('hidden', audio.muted);
+      iconMute.classList.toggle('hidden', !audio.muted);
+    }
+
+    volumeBar.addEventListener('input', () => {
+      const vol = parseInt(volumeBar.value);
+      audio.volume = vol / 100;
+      volumeLabel.textContent = vol + '%';
+      if (vol === 0) {
+        audio.muted = true;
+        iconVol.classList.add('hidden');
+        iconMute.classList.remove('hidden');
+      } else if (audio.muted) {
+        audio.muted = false;
+        iconVol.classList.remove('hidden');
+        iconMute.classList.add('hidden');
+      }
+    });
+
+    // ==========================================
+    // Progress bar seeking
+    // ==========================================
+    progressBar.addEventListener('mousedown', () => { isSeeking = true; });
+    progressBar.addEventListener('touchstart', () => { isSeeking = true; }, { passive: true });
+
+    progressBar.addEventListener('input', () => {
+      if (audio.duration) {
+        const seekTime = (progressBar.value / 100) * audio.duration;
+        currentTimeEl.textContent = formatTime(seekTime);
+      }
+    });
+
+    progressBar.addEventListener('change', () => {
+      if (audio.duration) {
+        audio.currentTime = (progressBar.value / 100) * audio.duration;
+      }
+      isSeeking = false;
+    });
+
+    progressBar.addEventListener('mouseup', () => { isSeeking = false; });
+    progressBar.addEventListener('touchend', () => { isSeeking = false; });
+
+    // ==========================================
+    // Audio event listeners
+    // ==========================================
+    audio.addEventListener('timeupdate', () => {
+      if (!isSeeking && audio.duration) {
+        const pct = (audio.currentTime / audio.duration) * 100;
+        progressBar.value = pct;
+        currentTimeEl.textContent = formatTime(audio.currentTime);
+      }
+    });
+
+    audio.addEventListener('loadedmetadata', () => {
+      totalTimeEl.textContent = formatTime(audio.duration);
+    });
+
+    audio.addEventListener('durationchange', () => {
+      totalTimeEl.textContent = formatTime(audio.duration);
+    });
+
+    audio.addEventListener('ended', () => {
+      if (repeatMode === 'one') {
+        audio.currentTime = 0;
+        audio.play();
+      } else {
+        playNext();
+      }
+    });
+
+    audio.addEventListener('play', () => {
+      isPlaying = true;
+      updatePlayPauseUI();
+    });
+
+    audio.addEventListener('pause', () => {
+      isPlaying = false;
+      updatePlayPauseUI();
+    });
+
+    // Error handling with auto-advance
+    audio.addEventListener('error', (e) => {
+      const track = currentIndex >= 0 ? playlist[currentIndex] : null;
+      const trackName = track ? track.title : 'Unknown';
+      console.error('Audio error for track:', trackName, audio.error);
+
+      errorCount++;
+
+      let errMsg = `Failed to load: ${trackName}`;
+      if (audio.error) {
+        switch (audio.error.code) {
+          case MediaError.MEDIA_ERR_ABORTED: errMsg += ' (aborted)'; break;
+          case MediaError.MEDIA_ERR_NETWORK: errMsg += ' (network error)'; break;
+          case MediaError.MEDIA_ERR_DECODE: errMsg += ' (decode error)'; break;
+          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED: errMsg += ' (format not supported)'; break;
+        }
+      }
+
+      showError(errMsg + ' — skipping...');
+
+      if (errorCount < MAX_CONSECUTIVE_ERRORS && playlist.length > 1) {
+        setTimeout(() => {
+          const next = (currentIndex + 1) % playlist.length;
+          playTrack(next);
+        }, 1500);
+      } else if (errorCount >= MAX_CONSECUTIVE_ERRORS) {
+        showError('Too many errors. Check your connection and try again.');
+        isPlaying = false;
+        updatePlayPauseUI();
+      }
+    });
+
+    // ==========================================
+    // Media Session API (lock screen controls)
+    // ==========================================
+    function updateMediaSession() {
+      if ('mediaSession' in navigator) {
+        const track = playlist[currentIndex];
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: track?.title || 'OneWave Radio',
+          artist: 'OneWave Radio',
+          album: 'OneWave Radio',
+        });
+        navigator.mediaSession.setActionHandler('play', togglePlay);
+        navigator.mediaSession.setActionHandler('pause', togglePlay);
+        navigator.mediaSession.setActionHandler('previoustrack', playPrev);
+        navigator.mediaSession.setActionHandler('nexttrack', playNext);
+      }
+    }
+
+    // ==========================================
+    // Keyboard shortcuts
+    // ==========================================
+    document.addEventListener('keydown', (e) => {
+      // Don't capture if user is typing in an input or Studio is open
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (!document.getElementById('studioOverlay').classList.contains('hidden')) return;
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          if (e.shiftKey) {
+            playNext();
+          } else if (audio.duration) {
+            audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+          }
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (e.shiftKey) {
+            playPrev();
+          } else {
+            audio.currentTime = Math.max(0, audio.currentTime - 10);
+          }
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          audio.volume = Math.min(1, audio.volume + 0.05);
+          volumeBar.value = Math.round(audio.volume * 100);
+          volumeLabel.textContent = Math.round(audio.volume * 100) + '%';
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          audio.volume = Math.max(0, audio.volume - 0.05);
+          volumeBar.value = Math.round(audio.volume * 100);
+          volumeLabel.textContent = Math.round(audio.volume * 100) + '%';
+          break;
+        case 'KeyM':
+          toggleMute();
+          break;
+        case 'KeyS':
+          reshufflePlaylist();
+          break;
+        case 'KeyR':
+          toggleRepeat();
+          break;
+      }
+    });
+
+    // ==========================================
+    // Fetch playlist and initialize
+    // ==========================================
+    async function init() {
+      try {
+        statusBadge.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          Fetching playlist...
+        `;
+
+        const response = await fetch(PLAYLIST_URL, {
+          mode: 'cors',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error('Playlist is not an array');
+        }
+
+        originalPlaylist = data.filter(track => {
+          return track && typeof track === 'object' && track.url;
+        }).map(track => ({
+          title: track.title || track.name || 'Untitled Track',
+          url: track.url,
+        }));
+
+        if (originalPlaylist.length === 0) {
+          throw new Error('No valid tracks found in playlist');
+        }
+
+        playlist = shuffleArray(originalPlaylist);
+
+        statusBadge.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          ${playlist.length} tracks loaded
+        `;
+
+        playlistCount.textContent = `${playlist.length} tracks · Shuffled`;
+
+        audio.volume = 0.8;
+
+        renderPlaylist();
+
+        console.log(`OneWave Radio: Loaded ${playlist.length} tracks from R2 storage`);
+
+      } catch (err) {
+        console.error('Failed to load playlist:', err);
+        statusBadge.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-red-400"></span>
+          Error loading playlist
+        `;
+        playlistCount.textContent = 'Failed to load';
+        playlistContainer.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-3 text-red-400/60">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            <p class="text-sm text-red-400/80 mb-1 font-medium">Failed to load playlist</p>
+            <p class="text-xs text-white/30 mb-4">${escapeHtml(err.message)}</p>
+            <button onclick="init()" class="text-xs bg-white/10 hover:bg-white/15 px-4 py-2 rounded-lg transition-colors text-white/60 hover:text-white/80">
+              Try Again
+            </button>
+          </div>
+        `;
+        showError('Failed to load playlist: ' + err.message);
+      }
+    }
+
+    // Start the player
+    init();
+
+
+    // ==========================================
+    // ==========================================
+    //
+    //   ONEWAVE STUDIO - GitHub Editor
+    //
+    //   Architecture & Auth Notes:
+    //   ─────────────────────────────────────
+    //   This is a 100% client-side editor that runs on GitHub Pages.
+    //   No server-side code is involved. The authentication approach:
+    //
+    //   CURRENT APPROACH: Fine-Grained Personal Access Token (PAT)
+    //   - User creates a PAT at github.com/settings/tokens?type=beta
+    //   - Scoped to ONLY the onewave-dashboard repo
+    //   - ONLY "Contents: Read & Write" permission needed
+    //   - Set to maximum 1-year expiration
+    //   - Token stored in localStorage (browser-only, never sent elsewhere)
+    //   - One-step login: paste token → done. Stay logged in across sessions.
+    //
+    //   WHY NOT OAuth?
+    //   GitHub OAuth Apps require a server-side component to exchange the
+    //   authorization code for an access token (because the client_secret
+    //   cannot be exposed in client-side code). Options to add OAuth later:
+    //
+    //   FUTURE UPGRADE PATH: Cloudflare Worker OAuth Proxy
+    //   Since you already use Cloudflare R2, you can add a tiny Cloudflare
+    //   Worker (~30 lines) that handles the OAuth token exchange:
+    //
+    //   1. Register a GitHub OAuth App at github.com/settings/developers
+    //   2. Set callback URL to your Worker URL
+    //   3. Worker receives auth code, exchanges it for token using
+    //      client_secret (stored as Worker secret), returns token to client
+    //   4. Client stores token in localStorage (same as current approach)
+    //
+    //   This would give you "Login with GitHub" one-click flow.
+    //   See: https://docs.github.com/en/apps/oauth-apps
+    //
+    // ==========================================
+    // ==========================================
+
+    const GITHUB_OWNER = 'keauokalani';
+    const GITHUB_REPO = 'onewave-dashboard';
+    const GITHUB_BRANCH = 'main';
+    const GITHUB_API = 'https://api.github.com';
+    const STORAGE_KEY = 'onewave_studio_token';
+    const SESSION_KEY = 'onewave_studio_session';
+
+    // Studio state
+    let studioToken = null;
+    let studioUser = null;
+    let studioFiles = [];          // flat list of {path, sha, type, size}
+    let studioOpenFile = null;     // {path, sha, content, originalContent}
+    let studioHasChanges = false;
+
+    // ==========================================
+    // Token Storage (localStorage with validation)
+    // ==========================================
+    function saveToken(token) {
+      try {
+        // Store with a timestamp so we can show "last used" info
+        const payload = {
+          t: btoa(token),  // base64 encode (obfuscation, not encryption)
+          ts: Date.now(),
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (e) {
+        console.warn('Could not save token to localStorage:', e);
+      }
+    }
+
+    function loadToken() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const payload = JSON.parse(raw);
+        return atob(payload.t);
+      } catch (e) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+    }
+
+    function clearToken() {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SESSION_KEY);
+    }
+
+    // Save minimal session data (user info) so we can show it instantly on reload
+    function saveSession(user) {
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          login: user.login,
+          avatar: user.avatar_url,
+          name: user.name || user.login,
+        }));
+      } catch (e) {}
+    }
+
+    function loadSession() {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // ==========================================
+    // GitHub API Helper
+    // ==========================================
+    async function ghFetch(endpoint, options = {}) {
+      const url = endpoint.startsWith('http') ? endpoint : `${GITHUB_API}${endpoint}`;
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          'Accept': 'application/vnd.github+json',
+          'Authorization': `Bearer ${studioToken}`,
+          'X-GitHub-Api-Version': '2022-11-28',
+          ...(options.headers || {}),
+        },
+      });
+
+      if (res.status === 401) {
+        // Token expired or revoked
+        clearToken();
+        studioToken = null;
+        studioUser = null;
+        showStudioLogin();
+        setStudioStatus('error', 'Token expired');
+        throw new Error('Authentication failed. Your token may have expired. Please generate a new one.');
+      }
+
+      if (res.status === 403) {
+        const data = await res.json().catch(() => ({}));
+        if (data.message && data.message.includes('rate limit')) {
+          throw new Error('GitHub API rate limit exceeded. Please wait a few minutes.');
+        }
+        throw new Error(data.message || 'Permission denied. Check your token permissions.');
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || `GitHub API error: ${res.status}`);
+      }
+
+      return res.json();
+    }
+
+    // ==========================================
+    // Studio UI Controls
+    // ==========================================
+    function openStudio() {
+      document.getElementById('studioOverlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      // Check for saved token
+      const savedToken = loadToken();
+      const savedSession = loadSession();
+
+      if (savedToken) {
+        studioToken = savedToken;
+
+        // Show cached user info immediately (no network delay)
+        if (savedSession) {
+          showStudioUserInfo(savedSession);
+        }
+
+        // Validate token in the background and load editor
+        setStudioStatus('loading', 'Connecting...');
+        validateTokenAndLoad();
+      } else {
+        showStudioLogin();
+      }
+    }
+
+    function closeStudio() {
+      if (studioHasChanges) {
+        if (!confirm('You have unsaved changes. Close anyway?')) return;
+      }
+      document.getElementById('studioOverlay').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    function showStudioLogin() {
+      document.getElementById('studioLogin').classList.remove('hidden');
+      document.getElementById('studioEditor').classList.add('hidden');
+      document.getElementById('studioUserInfo').classList.add('hidden');
+      document.getElementById('studioUserInfo').style.display = 'none';
+      setStudioStatus('disconnected', 'Not connected');
+    }
+
+    function showStudioEditor() {
+      document.getElementById('studioLogin').classList.add('hidden');
+      document.getElementById('studioEditor').classList.remove('hidden');
+      document.getElementById('studioEditor').style.display = 'flex';
+    }
+
+    function showStudioUserInfo(user) {
+      const el = document.getElementById('studioUserInfo');
+      el.classList.remove('hidden');
+      el.style.display = 'flex';
+      document.getElementById('studioAvatar').src = user.avatar || user.avatar_url || '';
+      document.getElementById('studioUsername').textContent = user.login || user.name || '';
+    }
+
+    function setStudioStatus(state, text) {
+      const dot = document.getElementById('studioStatusDot');
+      const label = document.getElementById('studioStatusText');
+      label.textContent = text;
+
+      dot.className = 'w-2 h-2 rounded-full';
+      switch (state) {
+        case 'connected':
+          dot.classList.add('bg-emerald-400');
+          break;
+        case 'loading':
+          dot.classList.add('bg-amber-400', 'animate-pulse');
+          break;
+        case 'error':
+          dot.classList.add('bg-red-400');
+          break;
+        default:
+          dot.classList.add('bg-white/20');
+      }
+    }
+
+    function showStudioToast(msg, type = 'info') {
+      const toast = document.getElementById('studioToast');
+      const msgEl = document.getElementById('studioToastMsg');
+      msgEl.textContent = msg;
+
+      toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] px-5 py-3 rounded-2xl text-sm shadow-2xl transition-all duration-300 flex items-center gap-2 max-w-md backdrop-blur-sm';
+
+      if (type === 'success') {
+        toast.classList.add('bg-emerald-500/90', 'text-white');
+      } else if (type === 'error') {
+        toast.classList.add('bg-red-500/90', 'text-white');
+      } else {
+        toast.classList.add('bg-sky-500/90', 'text-white');
+      }
+
+      // Clear previous timeout
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+      }, 3500);
+    }
+
+    // ==========================================
+    // Login Flow (single-step)
+    // ==========================================
+    async function studioLogin() {
+      const tokenInput = document.getElementById('tokenInput');
+      const loginBtn = document.getElementById('loginBtn');
+      const loginError = document.getElementById('loginError');
+      const loginErrorMsg = document.getElementById('loginErrorMsg');
+      const remember = document.getElementById('rememberToken').checked;
+
+      const token = tokenInput.value.trim();
+
+      if (!token) {
+        loginError.classList.remove('hidden');
+        loginErrorMsg.textContent = 'Please enter a GitHub Personal Access Token.';
+        tokenInput.focus();
+        return;
+      }
+
+      // Basic format check
+      if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
+        loginError.classList.remove('hidden');
+        loginErrorMsg.textContent = 'Token format looks wrong. It should start with "ghp_" (classic) or "github_pat_" (fine-grained).';
+        return;
+      }
+
+      // Show loading
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="studio-spinner">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+        </svg>
+        Connecting...
+      `;
+      loginError.classList.add('hidden');
+      setStudioStatus('loading', 'Authenticating...');
+
+      studioToken = token;
+
+      try {
+        await validateTokenAndLoad();
+
+        // Save token if requested
+        if (remember) {
+          saveToken(token);
+          saveSession(studioUser);
+        }
+
+        // Clear input
+        tokenInput.value = '';
+
+      } catch (err) {
+        studioToken = null;
+        loginError.classList.remove('hidden');
+        loginErrorMsg.textContent = err.message;
+        setStudioStatus('error', 'Auth failed');
+      }
+
+      // Reset button
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        Connect to GitHub
+      `;
+    }
+
+    async function validateTokenAndLoad() {
+      // Step 1: Validate token & get user info
+      const user = await ghFetch('/user');
+      studioUser = user;
+      showStudioUserInfo(user);
+
+      // Step 2: Verify repo access
+      try {
+        await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}`);
+      } catch (e) {
+        throw new Error(`Cannot access repo ${GITHUB_OWNER}/${GITHUB_REPO}. Make sure your token has access to this repository.`);
+      }
+
+      // Step 3: Load files
+      setStudioStatus('loading', 'Loading files...');
+      await loadRepoFiles();
+
+      // Step 4: Show editor
+      setStudioStatus('connected', `Connected as ${user.login}`);
+      saveSession(user);
+      showStudioEditor();
+    }
+
+    // ==========================================
+    // Logout
+    // ==========================================
+    function studioLogout() {
+      if (studioHasChanges) {
+        if (!confirm('You have unsaved changes. Logout anyway?')) return;
+      }
+      clearToken();
+      studioToken = null;
+      studioUser = null;
+      studioFiles = [];
+      studioOpenFile = null;
+      studioHasChanges = false;
+
+      // Reset editor UI
+      document.getElementById('codeEditor').classList.add('hidden');
+      document.getElementById('editorEmpty').classList.remove('hidden');
+      document.getElementById('commitBtn').classList.add('hidden');
+      document.getElementById('commitBtn').style.display = 'none';
+      document.getElementById('unsavedDot').classList.add('hidden');
+      document.getElementById('currentFilePath').textContent = 'Select a file';
+
+      showStudioLogin();
+      showStudioToast('Logged out. Token cleared from browser.', 'info');
+    }
+
+    // ==========================================
+    // Token Visibility Toggle
+    // ==========================================
+    function toggleTokenVisibility() {
+      const input = document.getElementById('tokenInput');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    // ==========================================
+    // File Browser
+    // ==========================================
+    async function loadRepoFiles(path = '') {
+      try {
+        const data = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`);
+
+        if (path === '') {
+          studioFiles = [];
+        }
+
+        const items = Array.isArray(data) ? data : [data];
+
+        // Sort: directories first, then files, alphabetically
+        items.sort((a, b) => {
+          if (a.type === 'dir' && b.type !== 'dir') return -1;
+          if (a.type !== 'dir' && b.type === 'dir') return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        for (const item of items) {
+          studioFiles.push({
+            path: item.path,
+            name: item.name,
+            sha: item.sha,
+            type: item.type,
+            size: item.size || 0,
+          });
+        }
+
+        renderFileBrowser();
+      } catch (err) {
+        console.error('Failed to load files:', err);
+        document.getElementById('fileBrowser').innerHTML = `
+          <div class="p-3 text-red-400/60 text-xs">
+            Failed to load files: ${escapeHtml(err.message)}
+            <button onclick="studioRefreshFiles()" class="block mt-2 text-sky-400 hover:underline">Retry</button>
+          </div>
+        `;
+      }
+    }
+
+    async function studioRefreshFiles() {
+      studioFiles = [];
+      setStudioStatus('loading', 'Refreshing...');
+      await loadRepoFiles();
+      setStudioStatus('connected', `Connected as ${studioUser?.login || ''}`);
+      showStudioToast('Files refreshed', 'success');
+    }
+
+    function renderFileBrowser() {
+      const container = document.getElementById('fileBrowser');
+
+      if (studioFiles.length === 0) {
+        container.innerHTML = '<div class="p-3 text-white/20 text-xs">No files found</div>';
+        return;
+      }
+
+      container.innerHTML = studioFiles.map(file => {
+        const isActive = studioOpenFile && studioOpenFile.path === file.path;
+        const isDir = file.type === 'dir';
+        const ext = file.name.split('.').pop().toLowerCase();
+
+        // File type icons
+        let icon;
+        if (isDir) {
+          icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+        } else if (['html', 'htm'].includes(ext)) {
+          icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`;
+        } else if (['js', 'mjs'].includes(ext)) {
+          icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path></svg>`;
+        } else if (['css', 'scss'].includes(ext)) {
+          icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path></svg>`;
+        } else if (['json'].includes(ext)) {
+          icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path></svg>`;
+        } else if (['md', 'txt'].includes(ext)) {
+          icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
+        } else if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'webp'].includes(ext)) {
+          icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`;
+        } else {
+          icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path></svg>`;
+        }
+
+        const sizeStr = !isDir && file.size ? formatFileSize(file.size) : '';
+
+        if (isDir) {
+          return `
+            <button onclick="expandDirectory('${escapeHtml(file.path)}')"
+              class="file-tree-item w-full flex items-center gap-2 px-3 py-1.5 text-left text-white/50 hover:text-white/70">
+              <span class="text-white/30">${icon}</span>
+              <span class="truncate flex-1">${escapeHtml(file.name)}</span>
+            </button>
+          `;
+        }
+
+        return `
+          <button onclick="openFile('${escapeHtml(file.path)}', '${file.sha}')"
+            class="file-tree-item w-full flex items-center gap-2 px-3 py-1.5 text-left text-white/50 hover:text-white/70 ${isActive ? 'active' : ''}">
+            <span class="flex-shrink-0">${icon}</span>
+            <span class="truncate flex-1">${escapeHtml(file.name)}</span>
+            <span class="text-[10px] text-white/15 flex-shrink-0">${sizeStr}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + 'B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
+    }
+
+    async function expandDirectory(dirPath) {
+      // Check if already expanded (files from this dir exist in the list)
+      const hasChildren = studioFiles.some(f => f.path.startsWith(dirPath + '/'));
+      if (hasChildren) {
+        // Collapse: remove children
+        studioFiles = studioFiles.filter(f => !f.path.startsWith(dirPath + '/'));
+        renderFileBrowser();
+        return;
+      }
+
+      // Expand: load directory contents
+      try {
+        const data = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${dirPath}?ref=${GITHUB_BRANCH}`);
+        const items = Array.isArray(data) ? data : [data];
+
+        items.sort((a, b) => {
+          if (a.type === 'dir' && b.type !== 'dir') return -1;
+          if (a.type !== 'dir' && b.type === 'dir') return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        // Insert after the directory entry
+        const dirIndex = studioFiles.findIndex(f => f.path === dirPath);
+        if (dirIndex !== -1) {
+          const newItems = items.map(item => ({
+            path: item.path,
+            name: '  ' + item.name, // indent
+            sha: item.sha,
+            type: item.type,
+            size: item.size || 0,
+          }));
+          studioFiles.splice(dirIndex + 1, 0, ...newItems);
+        }
+
+        renderFileBrowser();
+      } catch (err) {
+        showStudioToast('Failed to load directory: ' + err.message, 'error');
+      }
+    }
+
+    // ==========================================
+    // File Editor
+    // ==========================================
+    async function openFile(filePath, sha) {
+      // Warn about unsaved changes
+      if (studioHasChanges && studioOpenFile) {
+        if (!confirm(`You have unsaved changes to ${studioOpenFile.path}. Discard them?`)) return;
+      }
+
+      const editorEl = document.getElementById('codeEditor');
+      const emptyEl = document.getElementById('editorEmpty');
+      const pathEl = document.getElementById('currentFilePath');
+
+      // Check if file is binary (images, etc.)
+      const ext = filePath.split('.').pop().toLowerCase();
+      const binaryExts = ['png', 'jpg', 'jpeg', 'gif', 'ico', 'webp', 'woff', 'woff2', 'ttf', 'eot', 'mp3', 'mp4', 'wav', 'ogg', 'pdf', 'zip'];
+      if (binaryExts.includes(ext)) {
+        showStudioToast('Binary files cannot be edited in the browser.', 'info');
+        return;
+      }
+
+      // Show loading
+      pathEl.textContent = filePath;
+      emptyEl.innerHTML = `
+        <div class="text-center text-white/30">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto mb-2 studio-spinner">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+          </svg>
+          <p class="text-xs">Loading ${escapeHtml(filePath)}...</p>
+        </div>
+      `;
+      emptyEl.classList.remove('hidden');
+      editorEl.classList.add('hidden');
+
+      try {
+        const data = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}?ref=${GITHUB_BRANCH}`);
+
+        // Decode content from base64
+        const content = decodeBase64Unicode(data.content);
+
+        studioOpenFile = {
+          path: filePath,
+          sha: data.sha,
+          content: content,
+          originalContent: content,
+        };
+
+        // Show editor
+        editorEl.value = content;
+        editorEl.classList.remove('hidden');
+        emptyEl.classList.add('hidden');
+
+        // Show commit button
+        const commitBtn = document.getElementById('commitBtn');
+        commitBtn.classList.remove('hidden');
+        commitBtn.style.display = 'flex';
+
+        studioHasChanges = false;
+        document.getElementById('unsavedDot').classList.add('hidden');
+
+        // Update file browser highlight
+        renderFileBrowser();
+
+      } catch (err) {
+        emptyEl.innerHTML = `
+          <div class="text-center text-red-400/60">
+            <p class="text-sm mb-1">Failed to load file</p>
+            <p class="text-xs text-white/30">${escapeHtml(err.message)}</p>
+          </div>
+        `;
+        emptyEl.classList.remove('hidden');
+        showStudioToast('Failed to load file: ' + err.message, 'error');
+      }
+    }
+
+    // Handle base64 decoding with Unicode support
+    function decodeBase64Unicode(base64) {
+      // GitHub returns base64 with newlines
+      const cleaned = base64.replace(/\n/g, '');
+      const bytes = Uint8Array.from(atob(cleaned), c => c.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+
+    function encodeBase64Unicode(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    // Track changes in editor
+    document.getElementById('codeEditor').addEventListener('input', () => {
+      if (!studioOpenFile) return;
+      const currentContent = document.getElementById('codeEditor').value;
+      studioHasChanges = currentContent !== studioOpenFile.originalContent;
+      document.getElementById('unsavedDot').classList.toggle('hidden', !studioHasChanges);
+    });
+
+    // Ctrl+S / Cmd+S to save
+    document.getElementById('codeEditor').addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (studioHasChanges) {
+          studioCommit();
+        }
+      }
+      // Tab key inserts spaces
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const editor = e.target;
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + 2;
+        editor.dispatchEvent(new Event('input'));
+      }
+    });
+
+    // ==========================================
+    // Commit & Push
+    // ==========================================
+    function studioCommit() {
+      if (!studioOpenFile || !studioHasChanges) return;
+
+      // Update content from editor
+      studioOpenFile.content = document.getElementById('codeEditor').value;
+
+      // Show commit modal
+      document.getElementById('commitFilePath').textContent = studioOpenFile.path;
+      document.getElementById('commitMessage').value = `Update ${studioOpenFile.path}`;
+      document.getElementById('commitError').classList.add('hidden');
+      document.getElementById('commitModal').classList.remove('hidden');
+      document.getElementById('commitMessage').focus();
+      document.getElementById('commitMessage').select();
+    }
+
+    function closeCommitModal() {
+      document.getElementById('commitModal').classList.add('hidden');
+    }
+
+    async function executeCommit() {
+      const message = document.getElementById('commitMessage').value.trim();
+      const commitError = document.getElementById('commitError');
+      const commitBtn = document.getElementById('executeCommitBtn');
+
+      if (!message) {
+        commitError.textContent = 'Please enter a commit message.';
+        commitError.classList.remove('hidden');
+        return;
+      }
+
+      commitBtn.disabled = true;
+      commitBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="studio-spinner">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+        </svg>
+        Pushing...
+      `;
+      commitError.classList.add('hidden');
+
+      try {
+        const result = await ghFetch(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${studioOpenFile.path}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: message,
+            content: encodeBase64Unicode(studioOpenFile.content),
+            sha: studioOpenFile.sha,
+            branch: GITHUB_BRANCH,
+          }),
+        });
+
+        // Update SHA for future edits
+        studioOpenFile.sha = result.content.sha;
+        studioOpenFile.originalContent = studioOpenFile.content;
+        studioHasChanges = false;
+        document.getElementById('unsavedDot').classList.add('hidden');
+
+        // Update SHA in file list too
+        const fileEntry = studioFiles.find(f => f.path === studioOpenFile.path);
+        if (fileEntry) fileEntry.sha = result.content.sha;
+
+        closeCommitModal();
+        showStudioToast(`Pushed to ${GITHUB_BRANCH}! GitHub Pages will redeploy shortly.`, 'success');
+
+      } catch (err) {
+        commitError.textContent = err.message;
+        commitError.classList.remove('hidden');
+
+        // If SHA mismatch (someone else edited), offer to reload
+        if (err.message.includes('does not match') || err.message.includes('sha')) {
+          commitError.textContent = 'File was modified externally. Click "Refresh files" and reopen the file to get the latest version.';
+        }
+      }
+
+      commitBtn.disabled = false;
+      commitBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Push to GitHub
+      `;
+    }
+
+    // Close modal with Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('commitModal');
+        if (!modal.classList.contains('hidden')) {
+          closeCommitModal();
+        }
+      }
+    });
+
+    // Allow Enter in commit message to submit
+    document.getElementById('commitMessage').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        executeCommit();
+      }
+    });
+
+    // ==========================================
+    // Auto-login on page load (check URL for studio param)
+    // ==========================================
+    (function checkAutoOpen() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('studio')) {
+        // Small delay to let player init
+        setTimeout(() => openStudio(), 500);
+      }
+    })();
+
+  </script>
+</body>
+</html>
